@@ -133,13 +133,12 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
   /* ---------- sobre, menú y portada ---------- */
   const envelope = `
 <div class="envelope" id="envelope">
-  <div class="ice-field" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
   <div class="hint envelope-hint">${esc(ui.envelopeHint)}</div>
   <div class="env">
     <div class="back"></div>
     <div class="letter"><span class="label">${esc(cfg.hero?.label || '')}</span><span class="script">${names}</span><span class="letter-date">${DOT}</span></div>
     <div class="front"></div><div class="flap"></div>
-    <button class="seal" id="seal" type="button" aria-label="${esc(ui.envelopeOpen)}">${esc(c.initials)}</button>
+    <button class="seal" id="seal" type="button" aria-label="${esc(ui.envelopeOpen)}"><span>${esc(c.initials)}</span></button>
   </div>
   <div class="label hint">${esc(ui.envelopeTap)}</div>
   <div class="theme-pick" role="group" aria-label="${esc(ui.themeAria)}">
