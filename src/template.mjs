@@ -73,7 +73,6 @@ export const UI_DEFAULTS = {
   themeOriginal: 'Original',
   themeDiamond: 'Diamond Beach',
   themeOlivo: 'Olivo',
-  themeAcuarela: 'Acuarela',
   themePick: 'Elige el papel',
 };
 
@@ -143,7 +142,6 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
       <button type="button" data-theme="original">${esc(ui.themeOriginal)}</button>
       <button type="button" data-theme="diamond">${esc(ui.themeDiamond)}</button>
       <button type="button" data-theme="olivo">${esc(ui.themeOlivo)}</button>
-      <button type="button" data-theme="acuarela">${esc(ui.themeAcuarela)}</button>
     </div>
   </div>
 </div>`;
@@ -160,7 +158,6 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
         <button type="button" role="option" data-theme="original">${esc(ui.themeOriginal)}</button>
         <button type="button" role="option" data-theme="diamond">${esc(ui.themeDiamond)}</button>
         <button type="button" role="option" data-theme="olivo">${esc(ui.themeOlivo)}</button>
-        <button type="button" role="option" data-theme="acuarela">${esc(ui.themeAcuarela)}</button>
       </div>
     </div>
   </div>
@@ -174,8 +171,7 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
     ...evs.slice(0, 2).map((e) => ({ icon: e.icon || 'calendar', title: `${e.short || e.label} · ${time(e.start)}`, sub: e.name })),
   ];
   const hero = `
-<div id="inicio">
-<header class="hero skin-web">
+<header class="hero" id="inicio">
   <div class="hero-main">
     <div class="wrap">
       <div class="frame-wrap" id="parallax"><div class="frame">${img(h.image, h.imageAlt, { eager: true, priority: 'high' })}</div></div>
@@ -198,30 +194,12 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
     ${facts.map((f) => `<div class="fact">${icon(f.icon)}<div><b>${esc(f.title)}</b><span>${esc(f.sub)}</span></div></div>`).join('')}
   </div></div>
   <div class="ribbon" aria-hidden="true"><div class="track" id="track"><div class="set">${ribbon.map((t) => `<span>${esc(t)}</span>`).join('')}</div></div></div>
-</header>
-<header class="paper-hero skin-paper">
-  ${leaf('leaf-a')}${leaf('leaf-b')}
-  <div class="paper-sky" aria-hidden="true"></div>
-  <div class="wrap paper-hero-grid">
-    <div class="paper-copy">
-      <p class="label">${esc(h.label || '')}</p>
-      <h1>${esc(c.first)} <span class="amp">&amp;</span> ${esc(c.second)}</h1>
-      <p class="paper-when"><time datetime="${esc(cfg.date)}">${DOT}</time>${cfg.city ? ` · ${esc(cfg.city)}` : ''}</p>
-      ${h.lead ? `<p class="paper-lead">${rich(h.lead)}</p>` : ''}
-      ${cfg.rsvp ? `<a class="btn solid" href="#${id('rsvp')}">${esc(ui.ctaConfirm)}</a>` : ''}
-    </div>
-    <figure class="paper-portrait">
-      ${img(h.image, h.imageAlt, { eager: true, priority: 'high' })}
-      <div class="paper-round">${img('img/diamond-lagoon.webp', 'Diamond Beach', { eager: true, position: 'center 62%' })}</div>
-    </figure>
-  </div>
-</header>
-</div>`;
+</header>`;
 
   /* ---------- secciones ---------- */
   const it = cfg.intro;
   const intro = !it ? '' : `
-  <section class="block intro-block skin-web" aria-label="${esc(namesTxt)}">
+  <section class="block intro-block" aria-label="${esc(namesTxt)}">
     ${leaf('leaf-a')}
     <div class="wrap intro">
       <div class="intro-text r">
@@ -230,18 +208,6 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
         <p class="lead">${rich(it.text)}</p>
       </div>
       ${it.parents?.length ? `<div class="parents r">${it.parents.map((p) => `<div><div class="label">${esc(p.label)}</div><div class="script">${p.names.map(esc).join('<br>')}</div></div>`).join('')}</div>` : ''}
-    </div>
-  </section>
-  <section class="paper-welcome skin-paper" aria-label="${esc(namesTxt)}">
-    ${leaf('leaf-a')}
-    <div class="wrap paper-welcome-grid">
-      <figure class="paper-round paper-round-lg">${img('img/diamond-ice.webp', 'Diamond Beach', { eager: true, position: 'center 70%' })}</figure>
-      <div class="paper-welcome-copy">
-        ${it.blessing ? `<p class="label">${rich(it.blessing)}</p>` : ''}
-        ${c.fullNames?.length ? `<p class="full-names">${c.fullNames.map((n) => `<span>${esc(n)}</span>`).join('<span class="amp" aria-label="y">&amp;</span>')}</p>` : ''}
-        <p class="paper-welcome-lead">${rich(it.text)}</p>
-        ${it.parents?.length ? `<div class="paper-parents">${it.parents.map((p) => `<div><div class="label">${esc(p.label)}</div><div class="script">${p.names.map(esc).join('<br>')}</div></div>`).join('')}</div>` : ''}
-      </div>
     </div>
   </section>`;
 
@@ -257,56 +223,39 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
     </div>
   </section>`;
 
-  S.events = (s) => `
-  <section class="block" id="${id('events')}">
-    ${leaf('leaf-b')}
-    <div class="wrap skin-web">
-      ${head({ ...s, label: s.label || longDate(cfg.date) }, orn)}
-      <div class="events carousel" id="events">
-        ${s.list.map((e) => `<article class="card event lift r">
+  const mapsHref = (e) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.maps || `${e.name} ${e.address || ''}`)}`;
+  const calHref = (e) => `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(fill(ui.calTitle, { first: c.first, second: c.second, event: e.label }))}&dates=${gcal(e.start)}/${gcal(e.end || e.start)}&location=${encodeURIComponent([e.name, e.address].filter(Boolean).join(', '))}`;
+  const eventCard = (e) => `<article class="card event lift r">
+          ${e.image ? `<div class="event-arch">
+            <button type="button" class="event-photo" data-venue="${esc(e.name)}" data-img="${esc(e.image)}" aria-label="${esc(ui.venueGallery)}">${img(e.image, e.name)}</button>
+            <a class="event-pin" target="_blank" rel="noopener" href="${esc(mapsHref(e))}" aria-label="${esc(ui.directions)}">${icon('pin', { size: 15, stroke: 1.8 })}</a>
+          </div>` : ''}
           <div class="label">${esc(e.label)}</div>
           <h3 class="script">${esc(e.name)}</h3>
           ${e.address ? `<address class="addr">${esc(e.address)}</address>` : ''}
           <div class="time"><time datetime="${esc(e.start)}">${time(e.start)}</time></div>
           <div class="actions">
-            <a class="btn" target="_blank" rel="noopener" href="${esc(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(fill(ui.calTitle, { first: c.first, second: c.second, event: e.label }))}&dates=${gcal(e.start)}/${gcal(e.end || e.start)}&location=${encodeURIComponent([e.name, e.address].filter(Boolean).join(', '))}`)}">${esc(ui.addCalendar)}</a>
-            <a class="btn" target="_blank" rel="noopener" href="${esc(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.maps || `${e.name} ${e.address || ''}`)}`)}">${esc(ui.directions)}</a>
-            ${e.image ? `<button class="btn" type="button" data-venue="${esc(e.name)}" data-img="${esc(e.image)}">${esc(ui.venueGallery)}</button>` : ''}
+            <a class="btn" target="_blank" rel="noopener" href="${esc(calHref(e))}">${esc(ui.addCalendar)}</a>
+            <a class="btn" target="_blank" rel="noopener" href="${esc(mapsHref(e))}">${esc(ui.directions)}</a>
           </div>
-        </article>`).join('\n        ')}
-        ${s.dressCode ? `<article class="card event lift r">
-          <div class="label">${esc(s.dressCode.label)}</div>
-          <div class="row dress-icons">
-            <span class="dress-ic">${icon('dress', { size: 40, stroke: 1.1, label: ui.dress })}</span>
-            <span class="dress-ic">${icon('suit', { size: 40, stroke: 1.1, label: ui.suit })}</span>
-          </div>
-          <h3 class="script">${esc(s.dressCode.title)}</h3>
-          <p class="addr">${rich(s.dressCode.text)}</p>
-        </article>` : ''}
+        </article>`;
+  const dressCard = (d) => !d ? '' : `<article class="card event event-dress lift r">
+          <div class="event-arch event-arch-plain" aria-hidden="true">${icon('dress', { size: 36, stroke: 1.1 })}<span class="dress-dots"><i></i><i></i><i></i></span></div>
+          <div class="label">${esc(d.label)}</div>
+          <h3 class="script">${esc(d.title)}</h3>
+          <p class="addr">${rich(d.text)}</p>
+        </article>`;
+
+  S.events = (s) => `
+  <section class="block" id="${id('events')}">
+    ${leaf('leaf-b')}
+    <div class="wrap">
+      ${head({ ...s, label: s.label || longDate(cfg.date) }, orn)}
+      <div class="events carousel" id="events">
+        ${s.list.map(eventCard).join('\n        ')}
+        ${dressCard(s.dressCode)}
       </div>
       ${dots('events')}
-    </div>
-    <div class="wrap paper-weekend skin-paper">
-      <p class="label">${esc(s.label || longDate(cfg.date))}</p>
-      <h2>${rich(s.title)}</h2>
-      <div class="paper-days">
-        ${s.list.map((e) => `<article class="paper-day">
-          ${e.image ? `<figure>${img(e.image, e.name)}</figure>` : ''}
-          <p class="label">${esc(e.label)}</p>
-          <h3>${esc(e.name)}</h3>
-          <p class="paper-day-time"><time datetime="${esc(e.start)}">${time(e.start)}</time></p>
-          ${e.address ? `<address>${esc(e.address)}</address>` : ''}
-          <div class="paper-day-links">
-            <a href="${esc(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.maps || `${e.name} ${e.address || ''}`)}`)}" target="_blank" rel="noopener">${esc(ui.directions)}</a>
-            ${e.image ? `<button type="button" data-venue="${esc(e.name)}" data-img="${esc(e.image)}">${esc(ui.venueGallery)}</button>` : ''}
-          </div>
-        </article>`).join('')}
-      </div>
-      ${s.dressCode ? `<p class="paper-dress"><strong>${esc(s.dressCode.title)}</strong> — ${rich(s.dressCode.text).replace(/<br>/g, ' ')}</p>` : ''}
-    </div>
-    <div class="paper-vista skin-paper" aria-hidden="true">
-      <figure>${img('img/diamond-sunset.webp', 'Diamond Beach', { eager: true, position: 'center 55%' })}</figure>
-      <p>Diamond Beach</p>
     </div>
   </section>`;
 
@@ -412,7 +361,7 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
         <div class="card thanks" id="thanks" hidden>
           <div class="script thanks-title">${esc(ui.thanks)}</div>
           <p id="thanks-text"></p>
-          <a class="btn solid" id="wa" target="_blank" rel="noopener" href="https://wa.me/${esc(s.whatsapp)}">${esc(ui.sendWa)} <span class="arr" aria-hidden="true">→</span></a>
+          <a class="btn solid" id="wa" rel="noopener" href="https://wa.me/${esc(String(s.whatsapp).replace(/\D/g, ''))}">${esc(ui.sendWa)} <span class="arr" aria-hidden="true">→</span></a>
           <button class="btn" type="button" id="edit">${esc(ui.modify)}</button>
         </div>
       </div>
@@ -465,7 +414,7 @@ ${editorOn ? `<div class="overlay" id="editor" hidden>
     editWhatsapp: editorOn ? cfg.pendingEditor.whatsapp : '',
     verdicts: cfg.quiz?.verdicts || null,
     preload: images,
-    ui: Object.fromEntries(['itinHint', 'itinOf', 'copied', 'copyFallback', 'prev', 'next', 'goTo', 'score', 'thanksYes', 'thanksNo', 'waName', 'waAttend', 'waYes', 'waNo', 'waMenu', 'waSong', 'waNote', 'editHint', 'editHintImg', 'editMsg', 'editImgAttached', 'venueAlt', 'themeAria', 'themeOriginal', 'themeDiamond', 'themeOlivo', 'themeAcuarela'].map((k) => [k, ui[k]])),
+    ui: Object.fromEntries(['itinHint', 'itinOf', 'copied', 'copyFallback', 'prev', 'next', 'goTo', 'score', 'thanksYes', 'thanksNo', 'waName', 'waAttend', 'waYes', 'waNo', 'waMenu', 'waSong', 'waNote', 'editHint', 'editHintImg', 'editMsg', 'editImgAttached', 'venueAlt', 'themeAria', 'themeOriginal', 'themeDiamond', 'themeOlivo'].map((k) => [k, ui[k]])),
   };
 
   /* ---------- <head>: SEO y redes ---------- */
@@ -493,7 +442,7 @@ ${editorOn ? `<div class="overlay" id="editor" hidden>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<script>(function(){try{var q=location.search.match(/[?&]theme=([a-z]+)/);var t=(q&&q[1])||localStorage.getItem('invite-theme');if(t==='diamond'||t==='original'||t==='olivo'||t==='acuarela'){document.documentElement.setAttribute('data-theme',t);if(q)localStorage.setItem('invite-theme',t)}}catch(e){}})();</script>
+<script>(function(){try{var q=location.search.match(/[?&]theme=([a-z]+)/);var t=(q&&q[1])||localStorage.getItem('invite-theme');if(t==='acuarela'){t='original';localStorage.setItem('invite-theme','original')}if(t==='diamond'||t==='original'||t==='olivo'){document.documentElement.setAttribute('data-theme',t);if(q)localStorage.setItem('invite-theme',t)}}catch(e){}})();</script>
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
 ${seo.indexable ? '<meta name="robots" content="index,follow,max-image-preview:large">' : '<meta name="robots" content="noindex,nofollow">'}

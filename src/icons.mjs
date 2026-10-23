@@ -15,6 +15,7 @@ const P = {
   dress: '<path d="M9.5 2v4l-1.5 3 1.5 1.5L5 21h14l-4.5-10.5L16 9l-1.5-3V2"/><path d="M9.5 6h5"/>',
   suit: '<path d="M8 3l4 4 4-4 4 2v16H4V5z"/><path d="M12 7v14"/><path d="M8 3l1 6-1 2 4-4"/><path d="M16 3l-1 6 1 2-4-4"/>',
   close: '<path d="M5 5l14 14M19 5L5 19"/>',
+  pin: '<path d="M12 21s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.2"/>',
 };
 
 export function icon(name, { size = 34, stroke = 1.2, label = '' } = {}) {
