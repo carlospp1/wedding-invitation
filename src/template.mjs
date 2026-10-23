@@ -182,7 +182,7 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
 
   /* ---------- secciones ---------- */
   const it = cfg.intro;
-  const parentCol = (p) => `<div><div class="label">${esc(p.label)}</div><div class="script">${p.names.map(esc).join('<br>')}</div></div>`;
+  const parentCol = (p) => `<div><div class="label">${esc(p.label)}</div><div class="script">${p.names.map((n) => `<span class="typewrite">${esc(n)}</span>`).join('')}</div></div>`;
   const intro = !it ? '' : `
   <section class="block intro-block" aria-label="${esc(namesTxt)}">
     <div class="wrap">
@@ -193,7 +193,7 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
           ${it.parents?.length ? `<div class="invite-parents">${it.parents.map(parentCol).join(it.parents.length === 2 ? '<span class="invite-amp" aria-hidden="true">&amp;</span>' : '')}</div>` : ''}
           <div class="invite-rule" aria-hidden="true"><i></i></div>
           ${it.text ? `<p class="invite-lead">${rich(it.text)}</p>` : ''}
-          <p class="invite-names">${esc(c.first)} <span class="amp">&amp;</span> ${esc(c.second)}</p>
+          <p class="invite-names"><span class="typewrite-ghost" aria-hidden="true">${esc(c.first)} <span class="amp">&amp;</span> ${esc(c.second)}</span><span class="typewrite-live"><span class="typewrite">${esc(c.first)}</span> <span class="amp typewrite-amp">&amp;</span> <span class="typewrite">${esc(c.second)}</span></span></p>
           <p class="invite-date">${esc(inviteDate(cfg.date))}</p>
         </div>
       </article>

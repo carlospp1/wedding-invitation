@@ -59,12 +59,76 @@
   }
   tick(); setInterval(tick, 1000);
 
+  /* ---------- Nombres de la carta (padres y pareja) ---------- */
+  var cardLines = $$('.invite-card .typewrite');
+  var coupleAmp = $('.invite-names .typewrite-amp');
+  function typeLine(el, done) {
+    var text = el.getAttribute('data-text') || '';
+    var n = 0;
+    el.classList.add('is-typing');
+    function step() {
+      n += 1;
+      el.textContent = text.slice(0, n);
+      if (n < text.length) {
+        setTimeout(step, text.charAt(n - 1) === ' ' ? 88 : 42 + Math.random() * 38);
+      } else {
+        el.classList.remove('is-typing');
+        setTimeout(done, 200);
+      }
+    }
+    if (!text) { if (done) done(); return; }
+    step();
+  }
+  function typeColumn(els, done) {
+    var i = 0;
+    function next() {
+      if (i >= els.length) { if (done) done(); return; }
+      typeLine(els[i], next);
+      i += 1;
+    }
+    next();
+  }
+  function writeCouple() {
+    var names = $$('.invite-names .typewrite');
+    if (!names.length) return;
+    typeLine(names[0], function () {
+      if (coupleAmp) coupleAmp.classList.remove('is-off');
+      if (names[1]) typeLine(names[1]);
+    });
+  }
+  function startCardWrite() {
+    if (reduce || startCardWrite.ran || !cardLines.length) return;
+    startCardWrite.ran = true;
+    var cols = $$('.invite-parents > div');
+    if (!cols.length) {
+      setTimeout(writeCouple, 420);
+      return;
+    }
+    var left = cols.length;
+    cols.forEach(function (col, i) {
+      setTimeout(function () {
+        typeColumn($$('.typewrite', col), function () {
+          left -= 1;
+          if (left <= 0) setTimeout(writeCouple, 260);
+        });
+      }, 420 + i * 160);
+    });
+  }
+  if (!reduce && cardLines.length) {
+    cardLines.forEach(function (el) {
+      el.setAttribute('data-text', el.textContent);
+      el.textContent = '';
+    });
+    if (coupleAmp) coupleAmp.classList.add('is-off');
+  }
+
   /* ---------- Aparición al hacer scroll (solo lo que empieza fuera de pantalla) ---------- */
   var io = 'IntersectionObserver' in window ? new IntersectionObserver(function (es) {
     es.forEach(function (e) {
       if (!e.isIntersecting) return;
       e.target.classList.remove('pre');
       $$('.pre', e.target).forEach(function (x) { x.classList.remove('pre'); });
+      if (e.target.classList.contains('invite-card') || e.target.querySelector('.typewrite')) startCardWrite();
       io.unobserve(e.target);
     });
   }, { threshold: .12, rootMargin: '80px 0px' }) : null;
@@ -82,6 +146,8 @@
     });
     grouped.forEach(function (c) { io.observe(c); });
   }
+  var inviteCard = $('.invite-card');
+  if (inviteCard && !inviteCard.classList.contains('pre')) startCardWrite();
 
   /* ---------- Scroll: progreso, menú, botón flotante y parallax ---------- */
   var bar = $('#progress'), nav = $('#nav'), fcta = $('#float-cta'), par = $('#parallax'), foot = $('#foot-img'), rsvpSec = $('#rsvp') && $('#rsvp').closest('section');

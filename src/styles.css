@@ -239,13 +239,20 @@ section.intro-block{overflow:visible}
 .invite-parents:not(:has(.invite-amp)){grid-template-columns:1fr}
 .invite-parents .label{font-size:10.5px;letter-spacing:.22em;color:var(--ink);opacity:.72}
 .invite-parents .script{font-size:clamp(26px,3.6vw,38px);color:var(--ink);margin-top:8px;line-height:1.22}
+.invite-parents .typewrite{display:block;min-height:1.22em}
+.typewrite.is-typing::after{content:"";display:inline-block;width:.07em;height:.7em;margin-left:.05em;background:currentColor;opacity:.55;vertical-align:-.02em;animation:ink .62s step-end infinite}
+.invite-names .typewrite-amp{transition:opacity .28s}
+.invite-names .typewrite-amp.is-off{opacity:0}
+@keyframes ink{50%{opacity:0}}
 .invite-amp{font-family:var(--f-script);font-size:clamp(32px,4.4vw,46px);color:var(--amp,var(--rose));line-height:1;padding-top:18px}
 .invite-rule{display:flex;align-items:center;gap:12px;width:min(200px,46%);margin:clamp(22px,4vh,34px) 0;color:var(--rose)}
 .invite-rule::before,.invite-rule::after{content:"";flex:1;height:1px;background:currentColor;opacity:.75}
 .invite-rule i{width:5px;height:5px;background:currentColor;transform:rotate(45deg);flex:none}
 .invite-lead{font-size:clamp(20px,2.5vw,26px);line-height:1.45;color:var(--ink);max-width:22em}
 .invite-lead em{font-style:italic}
-.invite-names{font-family:var(--f-script);font-size:clamp(44px,6.6vw,68px);color:var(--sage);line-height:1.1;margin-top:clamp(14px,2.4vh,22px);font-weight:400}
+.invite-names{font-family:var(--f-script);font-size:clamp(44px,6.6vw,68px);color:var(--sage);line-height:1.1;margin-top:clamp(14px,2.4vh,22px);font-weight:400;position:relative;display:inline-block;text-align:left}
+.invite-names .typewrite-ghost{visibility:hidden}
+.invite-names .typewrite-live{position:absolute;left:0;top:0;white-space:nowrap}
 .invite-names .amp{font-size:.88em;color:var(--amp,var(--rose))}
 .invite-date{font-family:var(--f-sans);font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--rose);margin-top:clamp(14px,2.2vh,20px)}
 
@@ -502,6 +509,7 @@ footer .btn{margin-top:12px}
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
   .pre{opacity:1;transform:none}
   .nav,.frame-wrap,.facts,.ribbon,.fact,.scroll-cue,.envelope-hint,.env,.envelope .hint.label,.env .letter .label,.env .letter .script,.env .letter .letter-date{opacity:1!important;transform:none!important;animation:none!important}
+  .typewrite.is-typing::after{content:none}
   .invite-card.reveal.pre .invite-card-inner>*{opacity:1!important}
 }
 @media print{
