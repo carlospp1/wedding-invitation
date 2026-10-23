@@ -26,3 +26,5 @@ export function icon(name, { size = 34, stroke = 1.2, label = '' } = {}) {
 }
 
 export const LEAF = '<path d="M58 238C56 180 60 110 72 6" stroke="var(--leaf-stem)" stroke-width="1.2"/><path d="M58 205C36 198 24 178 26 156C44 166 55 184 58 205Z" fill="var(--leaf-1)"/><path d="M59 175C80 166 90 146 88 124C70 134 61 154 59 175Z" fill="var(--leaf-2)"/><path d="M61 140C40 132 30 112 33 92C50 102 59 120 61 140Z" fill="var(--leaf-3)"/><path d="M64 108C84 98 92 80 90 60C73 70 65 88 64 108Z" fill="var(--leaf-1)"/><path d="M67 74C50 66 43 50 46 34C60 42 67 58 67 74Z" fill="var(--leaf-2)"/>';
+
+export const SPRIG = '<path d="M8 10c22 18 58 36 124 48" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" opacity=".55"/><path d="M16 4c11 4 16 14 6 22-12-2-16-12-6-22z" opacity=".82"/><path d="M28 22c10 6 12 16 1 22-11-3-14-13-1-22z" opacity=".5"/><path d="M40 12c12 5 16 16 5 24-13-2-16-14-5-24z" opacity=".72"/><path d="M58 28c9 5 11 14 1 20-10-2-12-12-1-20z" opacity=".48"/><path d="M72 18c11 4 14 14 4 22-12-2-14-13-4-22z" opacity=".68"/>';

@@ -68,7 +68,7 @@ export default {
   },
 
   intro: {
-    blessing: 'Con la bendición de Dios y el amor de nuestros padres',
+    blessing: 'Con la bendición de Dios\ny el amor de nuestros padres',
     text: 'Tenemos el honor de invitarte a *celebrar nuestra unión* en matrimonio.',
     parents: [
       { label: 'Padres de la novia', names: ['Germán Coello', 'Tauca Muñoz'] },

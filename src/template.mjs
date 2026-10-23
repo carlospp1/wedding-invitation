@@ -1,6 +1,6 @@
 // Genera el HTML de la invitación a partir de la configuración.
 // Cada sección es opcional: si falta en la configuración (o vale null/false), no se pinta.
-import { icon, LEAF } from './icons.mjs';
+import { icon, LEAF, SPRIG } from './icons.mjs';
 
 export const UI_DEFAULTS = {
   envelopeHint: 'Tienes una invitación',
@@ -109,6 +109,10 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
   };
   const gcal = (iso) => new Date(iso).toISOString().replace(/[-:]|\.\d{3}/g, '');
   const DOT = dotDate(cfg.date);
+  const inviteDate = (iso) => {
+    const p = dt(iso, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    return `${p.weekday} ${p.day} de ${p.month} de ${p.year}`.toUpperCase();
+  };
 
   /* ---------- piezas ---------- */
   // Texto que, si está pendiente ("[...]"), se convierte en botón de edición.
@@ -120,6 +124,7 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
   const head = (s, extra = '') => `<div class="head r">${s.label ? `<div class="label">${rich(s.label)}</div>` : ''}<h2>${rich(s.title)}</h2>${extra}</div>`;
   const orn = '<div class="orn" aria-hidden="true"><i></i>✦<i></i></div>';
   const leaf = (cls) => `<svg class="leaf ${cls}" viewBox="0 0 120 240" fill="none" aria-hidden="true">${LEAF}</svg>`;
+  const sprig = (cls) => `<svg class="invite-sprig ${cls}" viewBox="0 0 140 70" fill="currentColor" aria-hidden="true">${SPRIG}</svg>`;
   const dots = (id) => `<div class="dots" data-for="${id}"></div>`;
   const id = (k) => cfg[k]?.id || IDS[k];
   const sections = ['story', 'events', 'itinerary', 'gifts', 'gallery', 'quiz', 'rsvp'].filter((k) => cfg[k]);
@@ -198,16 +203,21 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
 
   /* ---------- secciones ---------- */
   const it = cfg.intro;
+  const parentCol = (p) => `<div><div class="label">${esc(p.label)}</div><div class="script">${p.names.map(esc).join('<br>')}</div></div>`;
   const intro = !it ? '' : `
   <section class="block intro-block" aria-label="${esc(namesTxt)}">
-    ${leaf('leaf-a')}
-    <div class="wrap intro">
-      <div class="intro-text r">
-        ${it.blessing ? `<p class="blessing">${rich(it.blessing)}</p>` : ''}
-        ${c.fullNames?.length ? `<p class="full-names">${c.fullNames.map((n) => `<span>${esc(n)}</span>`).join('<span class="amp" aria-label="y">&amp;</span>')}</p>` : ''}
-        <p class="lead">${rich(it.text)}</p>
-      </div>
-      ${it.parents?.length ? `<div class="parents r">${it.parents.map((p) => `<div><div class="label">${esc(p.label)}</div><div class="script">${p.names.map(esc).join('<br>')}</div></div>`).join('')}</div>` : ''}
+    <div class="wrap">
+      <article class="invite-card r">
+        <div class="invite-card-inner">
+          ${sprig('tl')}${sprig('br')}
+          ${it.blessing ? `<p class="invite-blessing">${rich(it.blessing)}</p>` : ''}
+          ${it.parents?.length ? `<div class="invite-parents">${it.parents.map(parentCol).join(it.parents.length === 2 ? '<span class="invite-amp" aria-hidden="true">&amp;</span>' : '')}</div>` : ''}
+          <div class="invite-rule" aria-hidden="true"><i></i></div>
+          ${it.text ? `<p class="invite-lead">${rich(it.text)}</p>` : ''}
+          <p class="invite-names">${esc(c.first)} <span class="amp">&amp;</span> ${esc(c.second)}</p>
+          <p class="invite-date">${esc(inviteDate(cfg.date))}</p>
+        </div>
+      </article>
     </div>
   </section>`;
 
