@@ -174,7 +174,7 @@ export default {
       { q: '¿Quién dio el primer paso?', options: ['Chantal', 'Juan', 'Los dos'], answer: 1 },
       { q: '¿Dónde fue la pedida?', options: ['En Islandia', 'En Chichén Itzá', 'En casa'], answer: 0 },
     ],
-    verdicts: { all: '¡Nos conoces de maravilla!', some: '¡Casi! Te lo contamos en la boda', none: '¡Tenemos mucho que contarte!' },
+    verdicts: { all: '¡Nos conoces de maravilla!', some: '¡Casi! Te lo contamos en la boda', none: 'Lo siento, ya no estás invitado, al parecer no nos conoces :(' },
   },
 
   footer: {

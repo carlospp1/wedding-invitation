@@ -29,14 +29,16 @@
   /* ---------- Sobre ---------- */
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   function toTop() { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, 0); document.documentElement.style.scrollBehavior = ''; }
+  function onLoadTop() { toTop(); }
   var env = $('#envelope');
   // Si la página se abre con un ancla (#confirmar), se salta el sobre.
   if (env && location.hash && location.hash.length > 1 && $(location.hash)) {
     env.hidden = true; hero.classList.add('go');
   } else if (env) {
-    toTop(); addEventListener('load', toTop);
+    toTop(); addEventListener('load', onLoadTop);
     document.body.classList.add('locked');
     $('#seal').addEventListener('click', function () {
+      removeEventListener('load', onLoadTop);
       toTop();
       env.classList.add('open');
       setTimeout(function () { toTop(); document.body.classList.remove('locked'); hero.classList.add('go'); onScroll(); }, reduce ? 0 : 1100);
@@ -81,12 +83,14 @@
     grouped.forEach(function (c) { io.observe(c); });
   }
 
-  /* ---------- Scroll: progreso, menú, botón flotante y parallax ---------- */
+  /* ---------- Scroll: progreso, menú, botón flotante, parallax e itinerario ---------- */
   var bar = $('#progress'), nav = $('#nav'), fcta = $('#float-cta'), par = $('#parallax'), foot = $('#foot-img'), rsvpSec = $('#rsvp') && $('#rsvp').closest('section');
+  var itin = $('.itin'), fill_ = $('#tl-fill'), items = $$('.tl li'), end = $('#tl-end'), cnt = $('#itin-count'), lastK = -1;
+  var NAMES = items.map(function (li) { return li.querySelector('b').textContent; });
   var links = $$('.nav ul a'), secs = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
   var ticking = false;
   function onScroll() {
-    var y = scrollY, h = document.documentElement.scrollHeight - innerHeight;
+    var y = scrollY, h = document.documentElement.scrollHeight - innerHeight, navH = nav ? nav.getBoundingClientRect().height : 0;
     if (bar) bar.style.transform = 'scaleX(' + (h > 0 ? y / h : 0) + ')';
     if (nav) nav.classList.toggle('scrolled', y > 10);
     if (fcta) {
@@ -95,29 +99,67 @@
     }
     if (!reduce && innerWidth > 900 && par) par.style.transform = 'translateY(' + (y * .08) + 'px)';
     if (!reduce && foot) { var fr = foot.parentNode.getBoundingClientRect(); if (fr.top < innerHeight) foot.style.transform = 'translateY(' + ((fr.top - innerHeight) * .12) + 'px)'; }
+    if (itin && items.length) {
+      var ir = itin.getBoundingClientRect(), run = ir.height - (innerHeight - navH);
+      var pin = $('.itin-pin');
+      if (fcta && pin && ir.top <= navH + 2 && ir.bottom >= innerHeight - 2) fcta.classList.remove('show');
+      var pinned = pin && getComputedStyle(pin).position === 'sticky';
+      var ip = reduce || !pinned ? 1 : Math.min(1, Math.max(0, (navH - ir.top) / (run > 0 ? run : 1)));
+      var n = items.length, k = Math.min(n, Math.floor(ip * (n + 1.2)));
+      if (k !== lastK) {
+        lastK = k;
+        items.forEach(function (li, i) { li.classList.toggle('on', i < k); li.classList.toggle('cur', i === k - 1 && k <= n); });
+        if (fill_) fill_.style.height = (k === 0 ? 0 : items[k - 1].offsetTop + items[k - 1].offsetHeight / 2) + 'px';
+        if (cnt) cnt.textContent = k === 0 ? UI.itinHint : fill(UI.itinOf, { k: k, n: n, name: NAMES[k - 1] });
+      }
+      if (end) end.classList.toggle('on', k >= n && ip > .92);
+    }
     var cur = -1;
     secs.forEach(function (s, i) { if (s && s.getBoundingClientRect().top < innerHeight * .35) cur = i; });
     links.forEach(function (a, i) { a.classList.toggle('active', i === cur); if (i === cur) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
     ticking = false;
   }
   addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
-  addEventListener('resize', onScroll);
+  addEventListener('resize', function () { lastK = -1; onScroll(); });
   onScroll();
 
-  var itin = $('.itin');
-  if (itin) {
-    function showItin() { itin.classList.add('in'); }
-    if (reduce || !('IntersectionObserver' in window)) showItin();
-    else {
-      var iio = new IntersectionObserver(function (es) {
-        if (es.some(function (e) { return e.isIntersecting; })) { showItin(); iio.disconnect(); }
-      }, { threshold: 0, rootMargin: '0px 0px -12%' });
-      iio.observe(itin);
-    }
+  var jumpT;
+  function goTo(el, instant) {
+    if (!el) return;
+    document.documentElement.classList.add('no-snap');
+    var navH = nav ? nav.getBoundingClientRect().height : 0;
+    var y = Math.max(0, el.getBoundingClientRect().top + window.scrollY - navH);
+    window.scrollTo({ top: y, behavior: instant || reduce ? 'auto' : 'smooth' });
+    clearTimeout(jumpT);
+    jumpT = setTimeout(function () {
+      document.documentElement.classList.remove('no-snap');
+      onScroll();
+    }, instant || reduce ? 50 : 900);
   }
+  if (location.hash && location.hash.length > 1) {
+    var boot = $(location.hash);
+    if (boot) goTo(boot, true);
+  }
+  document.addEventListener('click', function (e) {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var a = e.target.closest('a[href^="#"]');
+    if (!a || a.getAttribute('target') === '_blank') return;
+    var href = a.getAttribute('href');
+    if (!href || href === '#') return;
+    var id = decodeURIComponent(href.slice(1));
+    var el = id && document.getElementById(id);
+    if (!el) return;
+    e.preventDefault();
+    if (history.pushState) history.pushState(null, '', href);
+    else location.hash = href;
+    goTo(el);
+  });
+  addEventListener('popstate', function () {
+    goTo(location.hash && $(location.hash) || hero, true);
+  });
 
   var themes = $('#themes'), themeBtn = themes && $('button', themes), themeMenu = $('#theme-menu');
-  var THEMES = { original: 1, diamond: 1, olivo: 1 };
+  var THEMES = { original: 1, diamond: 1, olivo: 1, acuarela: 1 };
   function themeNow() { return document.documentElement.getAttribute('data-theme') || 'original'; }
   function markTheme() {
     var cur = themeNow();

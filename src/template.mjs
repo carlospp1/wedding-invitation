@@ -17,6 +17,8 @@ export const UI_DEFAULTS = {
   directions: 'Cómo llegar',
   venueGallery: 'Galería',
   venueAlt: 'Acuarela de {name}',
+  itinHint: 'Desliza hacia abajo',
+  itinOf: '{k} de {n} · {name}',
   copy: 'Copiar',
   copied: 'Copiado',
   copyFallback: 'Selecciona y copia',
@@ -71,6 +73,7 @@ export const UI_DEFAULTS = {
   themeOriginal: 'Original',
   themeDiamond: 'Diamond Beach',
   themeOlivo: 'Olivo',
+  themeAcuarela: 'Acuarela',
   themePick: 'Elige el papel',
 };
 
@@ -140,6 +143,7 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
       <button type="button" data-theme="original">${esc(ui.themeOriginal)}</button>
       <button type="button" data-theme="diamond">${esc(ui.themeDiamond)}</button>
       <button type="button" data-theme="olivo">${esc(ui.themeOlivo)}</button>
+      <button type="button" data-theme="acuarela">${esc(ui.themeAcuarela)}</button>
     </div>
   </div>
 </div>`;
@@ -156,6 +160,7 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
         <button type="button" role="option" data-theme="original">${esc(ui.themeOriginal)}</button>
         <button type="button" role="option" data-theme="diamond">${esc(ui.themeDiamond)}</button>
         <button type="button" role="option" data-theme="olivo">${esc(ui.themeOlivo)}</button>
+        <button type="button" role="option" data-theme="acuarela">${esc(ui.themeAcuarela)}</button>
       </div>
     </div>
   </div>
@@ -169,7 +174,8 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
     ...evs.slice(0, 2).map((e) => ({ icon: e.icon || 'calendar', title: `${e.short || e.label} · ${time(e.start)}`, sub: e.name })),
   ];
   const hero = `
-<header class="hero" id="inicio">
+<div id="inicio">
+<header class="hero skin-web">
   <div class="hero-main">
     <div class="wrap">
       <div class="frame-wrap" id="parallax"><div class="frame">${img(h.image, h.imageAlt, { eager: true, priority: 'high' })}</div></div>
@@ -192,12 +198,30 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
     ${facts.map((f) => `<div class="fact">${icon(f.icon)}<div><b>${esc(f.title)}</b><span>${esc(f.sub)}</span></div></div>`).join('')}
   </div></div>
   <div class="ribbon" aria-hidden="true"><div class="track" id="track"><div class="set">${ribbon.map((t) => `<span>${esc(t)}</span>`).join('')}</div></div></div>
-</header>`;
+</header>
+<header class="paper-hero skin-paper">
+  ${leaf('leaf-a')}${leaf('leaf-b')}
+  <div class="paper-sky" aria-hidden="true"></div>
+  <div class="wrap paper-hero-grid">
+    <div class="paper-copy">
+      <p class="label">${esc(h.label || '')}</p>
+      <h1>${esc(c.first)} <span class="amp">&amp;</span> ${esc(c.second)}</h1>
+      <p class="paper-when"><time datetime="${esc(cfg.date)}">${DOT}</time>${cfg.city ? ` · ${esc(cfg.city)}` : ''}</p>
+      ${h.lead ? `<p class="paper-lead">${rich(h.lead)}</p>` : ''}
+      ${cfg.rsvp ? `<a class="btn solid" href="#${id('rsvp')}">${esc(ui.ctaConfirm)}</a>` : ''}
+    </div>
+    <figure class="paper-portrait">
+      ${img(h.image, h.imageAlt, { eager: true, priority: 'high' })}
+      <div class="paper-round">${img('img/diamond-lagoon.webp', 'Diamond Beach', { eager: true, position: 'center 62%' })}</div>
+    </figure>
+  </div>
+</header>
+</div>`;
 
   /* ---------- secciones ---------- */
   const it = cfg.intro;
   const intro = !it ? '' : `
-  <section class="block intro-block" aria-label="${esc(namesTxt)}">
+  <section class="block intro-block skin-web" aria-label="${esc(namesTxt)}">
     ${leaf('leaf-a')}
     <div class="wrap intro">
       <div class="intro-text r">
@@ -206,6 +230,18 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
         <p class="lead">${rich(it.text)}</p>
       </div>
       ${it.parents?.length ? `<div class="parents r">${it.parents.map((p) => `<div><div class="label">${esc(p.label)}</div><div class="script">${p.names.map(esc).join('<br>')}</div></div>`).join('')}</div>` : ''}
+    </div>
+  </section>
+  <section class="paper-welcome skin-paper" aria-label="${esc(namesTxt)}">
+    ${leaf('leaf-a')}
+    <div class="wrap paper-welcome-grid">
+      <figure class="paper-round paper-round-lg">${img('img/diamond-ice.webp', 'Diamond Beach', { eager: true, position: 'center 70%' })}</figure>
+      <div class="paper-welcome-copy">
+        ${it.blessing ? `<p class="label">${rich(it.blessing)}</p>` : ''}
+        ${c.fullNames?.length ? `<p class="full-names">${c.fullNames.map((n) => `<span>${esc(n)}</span>`).join('<span class="amp" aria-label="y">&amp;</span>')}</p>` : ''}
+        <p class="paper-welcome-lead">${rich(it.text)}</p>
+        ${it.parents?.length ? `<div class="paper-parents">${it.parents.map((p) => `<div><div class="label">${esc(p.label)}</div><div class="script">${p.names.map(esc).join('<br>')}</div></div>`).join('')}</div>` : ''}
+      </div>
     </div>
   </section>`;
 
@@ -224,7 +260,7 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
   S.events = (s) => `
   <section class="block" id="${id('events')}">
     ${leaf('leaf-b')}
-    <div class="wrap">
+    <div class="wrap skin-web">
       ${head({ ...s, label: s.label || longDate(cfg.date) }, orn)}
       <div class="events carousel" id="events">
         ${s.list.map((e) => `<article class="card event lift r">
@@ -250,19 +286,43 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
       </div>
       ${dots('events')}
     </div>
+    <div class="wrap paper-weekend skin-paper">
+      <p class="label">${esc(s.label || longDate(cfg.date))}</p>
+      <h2>${rich(s.title)}</h2>
+      <div class="paper-days">
+        ${s.list.map((e) => `<article class="paper-day">
+          ${e.image ? `<figure>${img(e.image, e.name)}</figure>` : ''}
+          <p class="label">${esc(e.label)}</p>
+          <h3>${esc(e.name)}</h3>
+          <p class="paper-day-time"><time datetime="${esc(e.start)}">${time(e.start)}</time></p>
+          ${e.address ? `<address>${esc(e.address)}</address>` : ''}
+          <div class="paper-day-links">
+            <a href="${esc(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.maps || `${e.name} ${e.address || ''}`)}`)}" target="_blank" rel="noopener">${esc(ui.directions)}</a>
+            ${e.image ? `<button type="button" data-venue="${esc(e.name)}" data-img="${esc(e.image)}">${esc(ui.venueGallery)}</button>` : ''}
+          </div>
+        </article>`).join('')}
+      </div>
+      ${s.dressCode ? `<p class="paper-dress"><strong>${esc(s.dressCode.title)}</strong> — ${rich(s.dressCode.text).replace(/<br>/g, ' ')}</p>` : ''}
+    </div>
+    <div class="paper-vista skin-paper" aria-hidden="true">
+      <figure>${img('img/diamond-sunset.webp', 'Diamond Beach', { eager: true, position: 'center 55%' })}</figure>
+      <p>Diamond Beach</p>
+    </div>
   </section>`;
 
   S.itinerary = (s) => `
-  <section class="block alt itin" id="${id('itinerary')}" style="--n:${s.items.length}">
+  <section class="alt itin" id="${id('itinerary')}" style="--n:${s.items.length}">
+    <div class="itin-pin">
     <div class="wrap">
-      ${head(s, orn)}
+      ${head(s, `<div class="itin-count" id="itin-count" aria-live="polite">${esc(ui.itinHint)}</div>`)}
       <div class="tl-wrap" id="tl">
         <span class="tl-rail" aria-hidden="true"></span><span class="tl-fill" id="tl-fill" aria-hidden="true"></span>
         <ol class="tl">
-        ${s.items.map((i, n) => `<li style="--i:${n}"><span class="node"></span><div class="item"><span class="ic">${icon(i.icon || 'heart')}</span><div><span class="t">${esc(i.time)}</span><b>${esc(i.title)}</b></div></div></li>`).join('\n        ')}
+        ${s.items.map((i) => `<li><span class="node"></span><div class="item"><span class="ic">${icon(i.icon || 'heart')}</span><div><span class="t">${esc(i.time)}</span><b>${esc(i.title)}</b></div></div></li>`).join('\n        ')}
         </ol>
       </div>
       ${s.end ? `<div class="tl-end" id="tl-end">${rich(s.end)}</div>` : ''}
+    </div>
     </div>
   </section>`;
 
@@ -405,7 +465,7 @@ ${editorOn ? `<div class="overlay" id="editor" hidden>
     editWhatsapp: editorOn ? cfg.pendingEditor.whatsapp : '',
     verdicts: cfg.quiz?.verdicts || null,
     preload: images,
-    ui: Object.fromEntries(['copied', 'copyFallback', 'prev', 'next', 'goTo', 'score', 'thanksYes', 'thanksNo', 'waName', 'waAttend', 'waYes', 'waNo', 'waMenu', 'waSong', 'waNote', 'editHint', 'editHintImg', 'editMsg', 'editImgAttached', 'venueAlt', 'themeAria', 'themeOriginal', 'themeDiamond', 'themeOlivo'].map((k) => [k, ui[k]])),
+    ui: Object.fromEntries(['itinHint', 'itinOf', 'copied', 'copyFallback', 'prev', 'next', 'goTo', 'score', 'thanksYes', 'thanksNo', 'waName', 'waAttend', 'waYes', 'waNo', 'waMenu', 'waSong', 'waNote', 'editHint', 'editHintImg', 'editMsg', 'editImgAttached', 'venueAlt', 'themeAria', 'themeOriginal', 'themeDiamond', 'themeOlivo', 'themeAcuarela'].map((k) => [k, ui[k]])),
   };
 
   /* ---------- <head>: SEO y redes ---------- */
@@ -433,7 +493,7 @@ ${editorOn ? `<div class="overlay" id="editor" hidden>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<script>(function(){try{var t=localStorage.getItem('invite-theme');if(t==='diamond'||t==='original'||t==='olivo')document.documentElement.setAttribute('data-theme',t)}catch(e){}})();</script>
+<script>(function(){try{var q=location.search.match(/[?&]theme=([a-z]+)/);var t=(q&&q[1])||localStorage.getItem('invite-theme');if(t==='diamond'||t==='original'||t==='olivo'||t==='acuarela'){document.documentElement.setAttribute('data-theme',t);if(q)localStorage.setItem('invite-theme',t)}}catch(e){}})();</script>
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
 ${seo.indexable ? '<meta name="robots" content="index,follow,max-image-preview:large">' : '<meta name="robots" content="noindex,nofollow">'}
