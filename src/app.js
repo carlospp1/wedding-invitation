@@ -32,10 +32,10 @@
     document.body.classList.add('locked');
     $('#seal').addEventListener('click', function () {
       removeEventListener('load', onLoadTop);
-      toTop();
       env.classList.add('open');
-      setTimeout(function () { toTop(); document.body.classList.remove('locked'); hero.classList.add('go'); onScroll(); }, reduce ? 0 : 1100);
-      setTimeout(function () { env.hidden = true; }, reduce ? 0 : 1800);
+      document.body.classList.remove('locked');
+      hero.classList.add('go');
+      setTimeout(function () { env.hidden = true; onScroll(); }, reduce ? 0 : 1800);
     });
   }
 
@@ -100,76 +100,19 @@
   addEventListener('resize', onScroll);
   onScroll();
 
-  function scrollPos() {
-    return window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-  }
-  function setScroll(y) {
-    var html = document.documentElement, body = document.body;
-    html.style.scrollBehavior = 'auto';
-    if (body) body.style.scrollBehavior = 'auto';
-    html.scrollTop = y;
-    if (body) body.scrollTop = y;
-    if (window.scrollTo) window.scrollTo(0, y);
-  }
-  var scrollAnim = 0;
-  function goTo(el, instant) {
-    if (!el) return;
-    if (scrollAnim) { cancelAnimationFrame(scrollAnim); scrollAnim = 0; }
-    var navH = nav ? nav.getBoundingClientRect().height : 0;
-    var from = scrollPos();
-    var to = Math.max(0, Math.round(el.getBoundingClientRect().top + from - navH));
-    if (instant || reduce || Math.abs(to - from) < 2) { setScroll(to); return; }
-    var t0 = 0;
-    var dur = Math.min(800, Math.max(320, Math.abs(to - from) * 0.35));
-    function step(now) {
-      if (!t0) t0 = now;
-      var p = Math.min(1, (now - t0) / dur);
-      setScroll(from + (to - from) * (1 - Math.pow(1 - p, 3)));
-      if (p < 1) scrollAnim = requestAnimationFrame(step);
-      else scrollAnim = 0;
-    }
-    scrollAnim = requestAnimationFrame(step);
-    setTimeout(function () {
-      if (Math.abs(scrollPos() - from) < 4) {
-        if (scrollAnim) cancelAnimationFrame(scrollAnim);
-        scrollAnim = 0;
-        setScroll(to);
-      }
-    }, 100);
-  }
   function jumpHash() {
     var el = location.hash && location.hash.length > 1 && $(location.hash);
-    if (el) goTo(el, true);
+    if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'auto', block: 'start' });
   }
   jumpHash();
   addEventListener('load', jumpHash);
-  function onHashClick(e) {
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    if (e.button != null && e.button !== 0) return;
-    var a = e.target.closest && e.target.closest('a[href^="#"]');
-    if (!a || a.target === '_blank') return;
-    var href = a.getAttribute('href');
-    if (!href || href === '#' || /^https?:/i.test(href)) return;
-    var id = decodeURIComponent(href.slice(1));
-    var el = id && document.getElementById(id);
-    if (!el) return;
-    e.preventDefault();
-    e.stopPropagation();
-    if (history.pushState) history.pushState(null, '', href);
-    else location.hash = href;
-    goTo(el);
-  }
-  document.addEventListener('click', onHashClick);
-  addEventListener('popstate', function () {
-    goTo(location.hash && $(location.hash) || hero, true);
-  });
 
   var themes = $('#themes'), themeBtn = themes && $('button', themes), themeMenu = $('#theme-menu');
   var THEMES = { original: 1, diamond: 1, olivo: 1 };
   function themeNow() { return document.documentElement.getAttribute('data-theme') || 'original'; }
   function markTheme() {
     var cur = themeNow();
-    $$('[data-theme]').forEach(function (b) { b.setAttribute('aria-current', b.dataset.theme === cur ? 'true' : 'false'); });
+    $$('button[data-theme]').forEach(function (b) { b.setAttribute('aria-current', b.dataset.theme === cur ? 'true' : 'false'); });
   }
   function setTheme(t) {
     if (!THEMES[t]) return;
@@ -180,7 +123,8 @@
     markTheme();
   }
   function closeThemes() { if (!themeMenu || !themeBtn) return; themeMenu.hidden = true; themeBtn.setAttribute('aria-expanded', 'false'); }
-  $$('[data-theme]').forEach(function (b) {
+  // Solo los botones: <html> también lleva data-theme y no debe capturar los clics de la página
+  $$('button[data-theme]').forEach(function (b) {
     b.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); setTheme(b.dataset.theme); closeThemes(); });
   });
   if (themeBtn && themeMenu) {
@@ -197,15 +141,21 @@
   var paper0 = getComputedStyle(document.documentElement).getPropertyValue('--paper').trim();
   var meta0 = $('meta[name="theme-color"]'); if (meta0 && paper0) meta0.content = paper0;
 
-  // Mantener visible el enlace activo dentro del menú horizontal (móvil)
-  var navUl = $('.nav ul');
-  if (navUl) new MutationObserver(function () {
+  // Mantener visible el enlace activo dentro del menú horizontal (móvil).
+  // Se espera a que la página deje de desplazarse: mover el menú a la vez corta el scroll suave hacia la sección.
+  var navUl = $('.nav ul'), navT = 0, navDirty = false;
+  function showActive() {
+    navDirty = false;
     if (navUl.scrollWidth <= navUl.clientWidth) return;
     var a = $('.nav ul a.active');
-    if (!a) { navUl.scrollTo({ left: 0, behavior: reduce ? 'auto' : 'smooth' }); return; }
-    var x = a.getBoundingClientRect().left - navUl.getBoundingClientRect().left + navUl.scrollLeft;
+    var x = a ? a.getBoundingClientRect().left - navUl.getBoundingClientRect().left + navUl.scrollLeft : 0;
     navUl.scrollTo({ left: Math.max(0, x), behavior: reduce ? 'auto' : 'smooth' });
-  }).observe(navUl, { subtree: true, attributes: true, attributeFilter: ['class'] });
+  }
+  function laterActive() { clearTimeout(navT); navT = setTimeout(showActive, 180); }
+  if (navUl) {
+    new MutationObserver(function () { navDirty = true; laterActive(); }).observe(navUl, { subtree: true, attributes: true, attributeFilter: ['class'] });
+    addEventListener('scroll', function () { if (navDirty) laterActive(); }, { passive: true });
+  }
 
   /* ---------- Ventanas ---------- */
   var lastFocus = null;
@@ -252,12 +202,8 @@
     $('#editor-form').addEventListener('submit', function (e) { e.preventDefault(); });
     var edSend = $('#editor-send');
     if (edSend) {
-      edSend.addEventListener('click', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
+      edSend.addEventListener('click', function () {
         document.body.classList.remove('locked');
-        var url = edSend.getAttribute('href');
-        if (url && url.indexOf('http') === 0) location.assign(url);
       });
     }
   }
@@ -273,34 +219,6 @@
       return best;
     }
     function go(i) { var ch = c.children[Math.max(0, Math.min(c.children.length - 1, i))]; if (ch) c.scrollTo({ left: left(ch), behavior: reduce ? 'auto' : 'smooth' }); }
-    var down = false, sx = 0, sy = 0, sl = 0, axis = '', moved = false, pid = 0;
-    c.addEventListener('dragstart', function (e) { e.preventDefault(); });
-    c.addEventListener('pointerdown', function (e) {
-      if (e.button !== 0 || c.scrollWidth <= c.clientWidth + 4) return;
-      down = true; moved = false; axis = ''; pid = e.pointerId; sx = e.clientX; sy = e.clientY; sl = c.scrollLeft;
-    });
-    c.addEventListener('pointermove', function (e) {
-      if (!down || e.pointerId !== pid) return;
-      var dx = e.clientX - sx, dy = e.clientY - sy;
-      if (!axis) {
-        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
-        axis = Math.abs(dx) >= Math.abs(dy) ? 'x' : 'y';
-        if (axis === 'y') { down = false; return; }
-        moved = true; c.classList.add('dragging'); c.style.touchAction = 'none';
-        try { c.setPointerCapture(e.pointerId); } catch (err) {}
-      }
-      if (axis === 'x') c.scrollLeft = sl - dx;
-    });
-    function endDrag(e) {
-      if (!down || (e && e.pointerId !== pid)) return;
-      down = false; axis = '';
-      c.style.touchAction = ''; c.classList.remove('dragging');
-      try { if (pid) c.releasePointerCapture(pid); } catch (err) {}
-      if (moved) go(cur());
-    }
-    c.addEventListener('pointerup', endDrag);
-    c.addEventListener('pointercancel', endDrag);
-    c.addEventListener('click', function (e) { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; } }, true);
     function btn(cls, label, text, fn) { var b = document.createElement('button'); b.type = 'button'; if (cls) b.className = cls; b.setAttribute('aria-label', label); if (text) b.textContent = text; b.addEventListener('click', fn); d.appendChild(b); return b; }
     function upd() {
       var best = cur();
@@ -404,32 +322,48 @@
       });
     });
     var val = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    var needMenu = !!$('[data-menu]');
+    var err = $('#r-err');
+    function clearErr() {
+      $$('.invalid', form).forEach(function (el) { el.classList.remove('invalid'); });
+      if (err) { err.classList.remove('on'); err.textContent = ''; }
+    }
+    function showErr(msg, field) {
+      $$('.invalid', form).forEach(function (el) { el.classList.remove('invalid'); });
+      if (err) { err.textContent = msg; err.classList.add('on'); }
+      if (field) {
+        field.classList.add('invalid');
+        var focusEl = field.querySelector('input, textarea');
+        if (focusEl && focusEl.focus) focusEl.focus();
+        if (field.scrollIntoView) field.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
+      }
+    }
+    $$('#r-name, #r-song, #r-note, [data-attend], [data-menu]', form).forEach(function (el) {
+      el.addEventListener('input', clearErr);
+      el.addEventListener('click', clearErr);
+    });
     form.addEventListener('submit', function (e) {
       e.preventDefault();
-      var name = val('r-name'), err = $('#r-err');
-      if (!name) { err.hidden = false; $('#r-name').focus(); return; }
-      err.hidden = true;
+      var name = val('r-name');
+      if (!name) { showErr(UI.nameError, $('#field-name')); return; }
+      if (attend === 'si' && needMenu && !menu) { showErr(UI.menuError, $('#field-menu')); return; }
+      clearErr();
       var song = val('r-song'), note = val('r-note');
       var lines = [D.rsvp.header, UI.waName + ': ' + name];
       if (attend === 'si') { lines.push(UI.waAttend + ': ' + UI.waYes); if (menu) lines.push(UI.waMenu + ': ' + menu); if (song) lines.push(UI.waSong + ': ' + song); }
       else lines.push(UI.waAttend + ': ' + UI.waNo);
       if (note) lines.push(UI.waNote + ': ' + note);
-      var waBtn = $('#wa');
       var url = wa(D.rsvp.whatsapp, lines.join('\n'));
-      if (waBtn) waBtn.setAttribute('href', url);
+      var waBtn = $('#wa');
+      if (waBtn) {
+        waBtn.setAttribute('href', url);
+        waBtn.setAttribute('target', '_blank');
+        waBtn.setAttribute('rel', 'noopener noreferrer');
+      }
       $('#thanks-text').textContent = fill(attend === 'si' ? UI.thanksYes : UI.thanksNo, { name: name.split(' ')[0] });
       form.hidden = true; thanks.hidden = false;
       if (fcta) fcta.classList.remove('show');
     });
-    var waBtn = $('#wa');
-    if (waBtn) {
-      waBtn.addEventListener('click', function (e) {
-        var url = waBtn.getAttribute('href');
-        if (!url || url.indexOf('http') !== 0) return;
-        e.preventDefault();
-        location.assign(url);
-      });
-    }
     $('#edit').addEventListener('click', function () { thanks.hidden = true; form.hidden = false; $('#r-name').focus(); });
   }
 })();

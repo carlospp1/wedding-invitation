@@ -38,6 +38,7 @@ export const UI_DEFAULTS = {
   song: 'Una canción que no puede faltar',
   note: 'Mensaje para los novios',
   nameError: 'Escribe tu nombre para poder confirmar.',
+  menuError: 'Elige un menú para confirmar.',
   submit: 'Preparar confirmación',
   thanks: '¡Gracias!',
   sendWa: 'Enviar por WhatsApp',
@@ -233,20 +234,20 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
     </div>
   </section>`;
 
-  const mapsHref = (e) => (/^https?:\/\//i.test(e.maps) ? e.maps : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.maps || `${e.name} ${e.address || ''}`)}`);
+  const mapsHref = (e) => (/^https?:\/\//i.test(e.maps) ? e.maps : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent([e.name, e.address].filter(Boolean).join(', ') || e.maps || '')}`);
   const calHref = (e) => `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(fill(ui.calTitle, { first: c.first, second: c.second, event: e.label }))}&dates=${gcal(e.start)}/${gcal(e.end || e.start)}&location=${encodeURIComponent([e.name, e.address].filter(Boolean).join(', '))}`;
   const eventCard = (e) => `<article class="card event lift r">
           ${e.image ? `<div class="event-arch">
             <button type="button" class="event-photo" data-venue="${esc(e.name)}" data-img="${esc(e.image)}" aria-label="${esc(ui.venueGallery)}">${img(e.image, e.name)}</button>
-            <a class="event-pin" target="_blank" rel="noopener" href="${esc(mapsHref(e))}" aria-label="${esc(ui.directions)}">${icon('pin', { size: 15, stroke: 1.8 })}</a>
+            <a class="event-pin" href="${esc(mapsHref(e))}" target="_blank" rel="noopener noreferrer" aria-label="${esc(ui.directions)}">${icon('pin', { size: 15, stroke: 1.8 })}</a>
           </div>` : ''}
           <div class="label">${esc(e.label)}</div>
           <h3 class="script">${esc(e.name)}</h3>
           ${e.address ? `<address class="addr">${esc(e.address)}</address>` : ''}
           <div class="time"><time datetime="${esc(e.start)}">${time(e.start)}</time></div>
           <div class="actions">
-            <a class="btn" target="_blank" rel="noopener" href="${esc(calHref(e))}">${esc(ui.addCalendar)}</a>
-            <a class="btn" target="_blank" rel="noopener" href="${esc(mapsHref(e))}">${esc(ui.directions)}</a>
+            <a class="btn" href="${esc(calHref(e))}" target="_blank" rel="noopener noreferrer">${esc(ui.addCalendar)}</a>
+            <a class="btn" href="${esc(mapsHref(e))}" target="_blank" rel="noopener noreferrer">${esc(ui.directions)}</a>
           </div>
         </article>`;
   const dressCard = (d) => !d ? '' : `<article class="card event event-dress lift r">
@@ -359,23 +360,23 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
       </div>
       <div class="r">
         <form class="card" id="rsvp" novalidate>
-          <div class="field"><input id="r-name" name="name" autocomplete="name" placeholder=" " required><label for="r-name">${esc(ui.name)}</label></div>
+          <div class="field" id="field-name"><input id="r-name" name="name" autocomplete="name" placeholder=" " required aria-describedby="r-err"><label for="r-name">${esc(ui.name)}</label></div>
           <div class="row" role="group" aria-label="${esc(ui.attendGroup)}">
             <button class="btn on" type="button" data-attend="si" aria-pressed="true">${esc(ui.attendYes)}</button>
             <button class="btn" type="button" data-attend="no" aria-pressed="false">${esc(ui.attendNo)}</button>
           </div>
           <div id="if-yes" class="if-yes">
-            ${s.menus?.length ? `<div class="stack"><span class="flabel" id="menu-l">${esc(ui.menu)}</span><div class="row" role="group" aria-labelledby="menu-l">${s.menus.map((m) => `<button class="btn" type="button" data-menu="${esc(m)}" aria-pressed="false">${esc(m)}</button>`).join('')}</div></div>` : ''}
+            ${s.menus?.length ? `<div class="stack" id="field-menu"><span class="flabel" id="menu-l">${esc(ui.menu)}</span><div class="row" role="group" aria-labelledby="menu-l">${s.menus.map((m) => `<button class="btn" type="button" data-menu="${esc(m)}" aria-pressed="false">${esc(m)}</button>`).join('')}</div></div>` : ''}
             ${s.askSong !== false ? `<div class="field"><input id="r-song" name="song" placeholder=" "><label for="r-song">${esc(ui.song)}</label></div>` : ''}
           </div>
           <div class="field"><textarea id="r-note" name="note" rows="2" placeholder=" "></textarea><label for="r-note">${esc(ui.note)}</label></div>
-          <p id="r-err" class="err" role="alert" hidden>${esc(ui.nameError)}</p>
+          <p id="r-err" class="err" role="alert"></p>
           <button class="btn solid start" type="submit">${esc(ui.submit)} <span class="arr" aria-hidden="true">→</span></button>
         </form>
         <div class="card thanks" id="thanks" hidden>
           <div class="script thanks-title">${esc(ui.thanks)}</div>
           <p id="thanks-text"></p>
-          <a class="btn solid" id="wa" href="https://api.whatsapp.com/send?phone=${esc(String(s.whatsapp).replace(/\D/g, ''))}">${esc(ui.sendWa)} <span class="arr" aria-hidden="true">→</span></a>
+          <a class="btn solid" id="wa" href="https://api.whatsapp.com/send?phone=${esc(String(s.whatsapp).replace(/\D/g, ''))}" target="_blank" rel="noopener noreferrer">${esc(ui.sendWa)} <span class="arr" aria-hidden="true">→</span></a>
           <button class="btn" type="button" id="edit">${esc(ui.modify)}</button>
         </div>
       </div>
@@ -412,7 +413,7 @@ ${editorOn ? `<div class="overlay" id="editor" hidden>
     <p id="editor-hint" class="muted"></p>
     <label for="editor-text" class="flabel start">${esc(ui.editNew)}</label>
     <textarea id="editor-text"></textarea>
-    <a class="btn solid" id="editor-send" href="https://api.whatsapp.com/send?phone=${esc(String(cfg.pendingEditor.whatsapp).replace(/\D/g, ''))}">${esc(ui.editSend)} <span class="arr" aria-hidden="true">→</span></a>
+    <a class="btn solid" id="editor-send" href="https://api.whatsapp.com/send?phone=${esc(String(cfg.pendingEditor.whatsapp).replace(/\D/g, ''))}" target="_blank" rel="noopener noreferrer">${esc(ui.editSend)} <span class="arr" aria-hidden="true">→</span></a>
   </form>
 </div>` : ''}
 <div class="overlay lightbox" id="lightbox" hidden>
@@ -428,7 +429,7 @@ ${editorOn ? `<div class="overlay" id="editor" hidden>
     editWhatsapp: editorOn ? cfg.pendingEditor.whatsapp : '',
     verdicts: cfg.quiz?.verdicts || null,
     preload: images,
-    ui: Object.fromEntries(['itinHint', 'itinOf', 'copied', 'copyFallback', 'prev', 'next', 'goTo', 'score', 'thanksYes', 'thanksNo', 'waName', 'waAttend', 'waYes', 'waNo', 'waMenu', 'waSong', 'waNote', 'editHint', 'editHintImg', 'editMsg', 'editImgAttached', 'venueAlt', 'themeAria', 'themeOriginal', 'themeDiamond', 'themeOlivo'].map((k) => [k, ui[k]])),
+    ui: Object.fromEntries(['itinHint', 'itinOf', 'copied', 'copyFallback', 'prev', 'next', 'goTo', 'score', 'thanksYes', 'thanksNo', 'waName', 'waAttend', 'waYes', 'waNo', 'waMenu', 'waSong', 'waNote', 'editHint', 'editHintImg', 'editMsg', 'editImgAttached', 'venueAlt', 'themeAria', 'themeOriginal', 'themeDiamond', 'themeOlivo', 'nameError', 'menuError'].map((k) => [k, ui[k]])),
   };
 
   /* ---------- <head>: SEO y redes ---------- */
