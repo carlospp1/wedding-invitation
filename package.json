@@ -1,0 +1,12 @@
+{
+  "name": "wedding-invitation",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Invitación de boda interactiva y reutilizable: una carpeta de configuración por pareja, web estática sin dependencias.",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "build": "node build.mjs",
+    "preview": "node build.mjs && node scripts/serve.mjs dist"
+  }
+}
