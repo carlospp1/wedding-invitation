@@ -1,7 +1,9 @@
+# Para publicar otra invitación desde este mismo repo, crea otro sitio en Netlify
+# y cambia la variable INVITATION (Site configuration → Environment variables).
 [build]
-  publish = "."
+  command = "node build.mjs"
+  publish = "dist"
 
-[[headers]]
-  for = "/img/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+[build.environment]
+  NODE_VERSION = "20"
+  INVITATION = "chantal-juan"
