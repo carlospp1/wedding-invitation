@@ -16,6 +16,8 @@ export default {
     first: 'Chantal',
     second: 'Juan',
     initials: 'C&J', // sello del sobre y favicon
+    // Nombres completos (opcional): se muestran en la introducción, en el mismo orden que first/second.
+    fullNames: ['Chanthal Oriana Coello Muñoz', 'Juan Manuel Pestana Pérez'],
   },
 
   // Fecha y hora de la ceremonia (la cuenta atrás va hasta aquí). Incluye la diferencia horaria.
@@ -69,8 +71,8 @@ export default {
     blessing: 'Con la bendición de Dios y el amor de nuestros padres',
     text: 'Tenemos el honor de invitarte a *celebrar nuestra unión* en matrimonio.',
     parents: [
-      { label: 'Padres de la novia', names: ['Tania de Coello', 'Germán Coello'] },
-      { label: 'Padres del novio', names: ['Yelitza Pérez', 'Juan Pestana'] },
+      { label: 'Padres de la novia', names: ['Germán Coello', 'Tauca Muñoz'] },
+      { label: 'Padres del novio', names: ['Juan Pestana', 'Yelitza Pérez'] },
     ],
   },
 
