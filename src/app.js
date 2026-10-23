@@ -41,7 +41,7 @@
       document.body.classList.remove('locked');
       toTop();
       requestAnimationFrame(toTop);
-      hero.classList.add('go');
+      hero.classList.add('go', 'from-env');
       setTimeout(function () { env.hidden = true; onScroll(); }, reduce ? 0 : 1800);
     });
   }
@@ -113,40 +113,6 @@
   }
   jumpHash();
   addEventListener('load', jumpHash);
-
-  var themes = $('#themes'), themeBtn = themes && $('button', themes), themeMenu = $('#theme-menu');
-  var THEMES = { original: 1, diamond: 1, olivo: 1 };
-  function themeNow() { return document.documentElement.getAttribute('data-theme') || 'original'; }
-  function markTheme() {
-    var cur = themeNow();
-    $$('button[data-theme]').forEach(function (b) { b.setAttribute('aria-current', b.dataset.theme === cur ? 'true' : 'false'); });
-  }
-  function setTheme(t) {
-    if (!THEMES[t]) return;
-    document.documentElement.setAttribute('data-theme', t);
-    try { localStorage.setItem('invite-theme', t); } catch (e) {}
-    var paper = getComputedStyle(document.documentElement).getPropertyValue('--paper').trim();
-    var meta = $('meta[name="theme-color"]'); if (meta && paper) meta.content = paper;
-    markTheme();
-  }
-  function closeThemes() { if (!themeMenu || !themeBtn) return; themeMenu.hidden = true; themeBtn.setAttribute('aria-expanded', 'false'); }
-  // Solo los botones: <html> también lleva data-theme y no debe capturar los clics de la página
-  $$('button[data-theme]').forEach(function (b) {
-    b.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); setTheme(b.dataset.theme); closeThemes(); });
-  });
-  if (themeBtn && themeMenu) {
-    themeBtn.addEventListener('click', function (e) {
-      e.stopPropagation();
-      var open = themeMenu.hidden;
-      themeMenu.hidden = !open;
-      themeBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-    });
-    document.addEventListener('click', function (e) { if (themes && !themes.contains(e.target)) closeThemes(); });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeThemes(); });
-  }
-  markTheme();
-  var paper0 = getComputedStyle(document.documentElement).getPropertyValue('--paper').trim();
-  var meta0 = $('meta[name="theme-color"]'); if (meta0 && paper0) meta0.content = paper0;
 
   // Mantener visible el enlace activo dentro del menú horizontal (móvil).
   // Se espera a que la página deje de desplazarse: mover el menú a la vez corta el scroll suave hacia la sección.

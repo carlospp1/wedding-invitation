@@ -70,11 +70,6 @@ export const UI_DEFAULTS = {
   suit: 'Traje',
   calTitle: 'Boda {first} y {second} - {event}',
   skip: 'Saltar al contenido',
-  themeAria: 'Diseño de la invitación',
-  themeOriginal: 'Original',
-  themeDiamond: 'Diamond Beach',
-  themeOlivo: 'Olivo',
-  themePick: 'Elige el papel',
 };
 
 // Identificadores (anclas #) de cada sección; se pueden cambiar con `id` en la configuración.
@@ -141,14 +136,6 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
     <button class="seal" id="seal" type="button" aria-label="${esc(ui.envelopeOpen)}"><span>${esc(c.initials)}</span></button>
   </div>
   <div class="label hint">${esc(ui.envelopeTap)}</div>
-  <div class="theme-pick" role="group" aria-label="${esc(ui.themeAria)}">
-    <span class="flabel">${esc(ui.themePick)}</span>
-    <div class="row center">
-      <button type="button" data-theme="original">${esc(ui.themeOriginal)}</button>
-      <button type="button" data-theme="diamond">${esc(ui.themeDiamond)}</button>
-      <button type="button" data-theme="olivo">${esc(ui.themeOlivo)}</button>
-    </div>
-  </div>
 </div>`;
 
   const navItems = sections.filter((k) => cfg[k].nav || k === 'rsvp').map((k) => `<li><a href="#${id(k)}">${esc(k === 'rsvp' ? cfg.rsvp.nav || ui.rsvpNav : cfg[k].nav)}</a></li>`).join('');
@@ -157,14 +144,6 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
   <div class="wrap">
     <a class="brand" href="#inicio">${esc(c.first[0])} <span class="amp">&amp;</span> ${esc(c.second[0])}</a>
     <ul>${navItems}</ul>
-    <div class="theme-switch" id="themes">
-      <button type="button" aria-expanded="false" aria-haspopup="true" aria-controls="theme-menu" aria-label="${esc(ui.themeAria)}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M12 3.2 20.8 12 12 20.8 3.2 12Z"/></svg></button>
-      <div class="theme-menu" id="theme-menu" role="listbox" aria-label="${esc(ui.themeAria)}" hidden>
-        <button type="button" role="option" data-theme="original">${esc(ui.themeOriginal)}</button>
-        <button type="button" role="option" data-theme="diamond">${esc(ui.themeDiamond)}</button>
-        <button type="button" role="option" data-theme="olivo">${esc(ui.themeOlivo)}</button>
-      </div>
-    </div>
   </div>
 </nav>`;
 
@@ -278,7 +257,7 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
       <div class="tl-wrap">
         <span class="tl-rail" aria-hidden="true"></span>
         <ol class="tl">
-        ${s.items.map((i) => `<li>
+        ${s.items.map((i) => `<li class="r">
           <span class="ic">${icon(i.icon || 'heart', { size: 22, stroke: 1.3 })}</span>
           <span class="node" aria-hidden="true"></span>
           <div class="meta"><span class="t">${esc(i.time)}</span><b>${esc(i.title)}</b></div>
@@ -386,7 +365,7 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
   const footer = !f ? '' : `
 <footer>
   ${f.image ? img(f.image, '', { id: 'foot-img' }) : ''}
-  <div class="wrap">
+  <div class="wrap r">
     <div class="label">${esc(f.label || '')}</div>
     <div class="script">${names}</div>
     <div class="foot-date">${DOT}</div>
@@ -428,7 +407,7 @@ ${editorOn ? `<div class="overlay" id="editor" hidden>
     editWhatsapp: editorOn ? cfg.pendingEditor.whatsapp : '',
     verdicts: cfg.quiz?.verdicts || null,
     preload: images,
-    ui: Object.fromEntries(['itinHint', 'itinOf', 'copied', 'copyFallback', 'prev', 'next', 'goTo', 'score', 'thanksYes', 'thanksNo', 'waName', 'waAttend', 'waYes', 'waNo', 'waMenu', 'waSong', 'waNote', 'editHint', 'editHintImg', 'editMsg', 'editImgAttached', 'venueAlt', 'themeAria', 'themeOriginal', 'themeDiamond', 'themeOlivo', 'nameError', 'menuError'].map((k) => [k, ui[k]])),
+    ui: Object.fromEntries(['itinHint', 'itinOf', 'copied', 'copyFallback', 'prev', 'next', 'goTo', 'score', 'thanksYes', 'thanksNo', 'waName', 'waAttend', 'waYes', 'waNo', 'waMenu', 'waSong', 'waNote', 'editHint', 'editHintImg', 'editMsg', 'editImgAttached', 'venueAlt', 'nameError', 'menuError'].map((k) => [k, ui[k]])),
   };
 
   /* ---------- <head>: SEO y redes ---------- */
@@ -452,11 +431,10 @@ ${editorOn ? `<div class="overlay" id="editor" hidden>
   const fonts = assets.fonts.map((f) => `<link rel="preload" href="${f}" as="font" type="font/woff2" crossorigin>`).join('\n');
 
   return `<!doctype html>
-<html lang="${esc(cfg.lang || 'es')}" data-theme="original" style="--hero-img:url('${esc(h.image || '')}')">
+<html lang="${esc(cfg.lang || 'es')}" style="--hero-img:url('${esc(h.image || '')}')">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<script>(function(){try{var q=location.search.match(/[?&]theme=([a-z]+)/);var t=(q&&q[1])||localStorage.getItem('invite-theme');if(t==='acuarela'){t='original';localStorage.setItem('invite-theme','original')}if(t==='diamond'||t==='original'||t==='olivo'){document.documentElement.setAttribute('data-theme',t);if(q)localStorage.setItem('invite-theme',t)}}catch(e){}})();</script>
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
 ${seo.indexable ? '<meta name="robots" content="index,follow,max-image-preview:large">' : '<meta name="robots" content="noindex,nofollow">'}
