@@ -136,7 +136,7 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
   <div class="hint envelope-hint">${esc(ui.envelopeHint)}</div>
   <div class="env">
     <div class="back"></div>
-    <div class="letter"><span class="label">${esc(cfg.hero?.label || '')}</span><span class="script">${names}</span><span class="letter-date">${DOT}</span></div>
+    <div class="letter"><span class="label">${esc(cfg.hero?.label || '')}</span><span class="script">${esc(c.first)} <span class="amp">&amp;</span> ${esc(c.second)}</span><span class="letter-date">${DOT}</span></div>
     <div class="front"></div><div class="flap"></div>
     <button class="seal" id="seal" type="button" aria-label="${esc(ui.envelopeOpen)}"><span>${esc(c.initials)}</span></button>
   </div>
@@ -155,7 +155,7 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
   const nav = cfg.nav === false ? '' : `
 <nav class="nav" id="nav" aria-label="${esc(ui.navAria)}">
   <div class="wrap">
-    <a class="brand" href="#inicio">${esc(c.first[0])} &amp; ${esc(c.second[0])}</a>
+    <a class="brand" href="#inicio">${esc(c.first[0])} <span class="amp">&amp;</span> ${esc(c.second[0])}</a>
     <ul>${navItems}</ul>
     <div class="theme-switch" id="themes">
       <button type="button" aria-expanded="false" aria-haspopup="true" aria-controls="theme-menu" aria-label="${esc(ui.themeAria)}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M12 3.2 20.8 12 12 20.8 3.2 12Z"/></svg></button>
