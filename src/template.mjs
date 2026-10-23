@@ -182,6 +182,7 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
     <div class="wrap intro">
       <div class="intro-text r">
         ${it.blessing ? `<p class="blessing">${rich(it.blessing)}</p>` : ''}
+        ${c.fullNames?.length ? `<p class="full-names">${c.fullNames.map((n) => `<span>${esc(n)}</span>`).join('<span class="amp" aria-label="y">&amp;</span>')}</p>` : ''}
         <p class="lead">${rich(it.text)}</p>
       </div>
       ${it.parents?.length ? `<div class="parents r">${it.parents.map((p) => `<div><div class="label">${esc(p.label)}</div><div class="script">${p.names.map(esc).join('<br>')}</div></div>`).join('')}</div>` : ''}
