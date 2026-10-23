@@ -1,5 +1,5 @@
 /* Invitación de boda · estilos
-   Papel de acuarela: portada con la foto enmarcada (escritorio y móvil),
+   Papel de acuarela: portada con la acuarela enmarcada (escritorio) o a sangre (móvil),
    ritmo vertical fijo por secciones, contenedor de 1120px.
    Los colores y tipografías son variables: se pueden cambiar desde `theme` en la configuración. */
 
@@ -381,32 +381,26 @@ footer .btn{margin-top:12px}
   .event .addr{font-size:14px}
   .rsvp .side .label{display:none}
   .rsvp .side h2{font-size:38px}
-  /* Portada: misma idea que escritorio (foto enmarcada + nombres), apilada */
-  .hero{min-height:0}
-  .hero-main{flex:none}
-  .hero-main>.wrap{display:flex;flex-direction:column;align-items:center;gap:clamp(22px,4vh,36px);padding:clamp(20px,3.5vh,36px) 0 clamp(24px,4vh,40px);position:static}
-  .hero-main>.wrap>.hero-text{position:relative;z-index:1;order:1}
-  .frame-wrap{position:relative;z-index:0;width:100%;display:flex;justify-content:center;order:0}
-  .frame{position:relative;inset:auto;width:min(72vw,300px);margin:0 auto;padding:12px;transform:rotate(-1.2deg);box-shadow:0 22px 48px rgba(var(--shade),.18),0 2px 0 rgba(var(--shade),.05);background:var(--white)}
-  .frame img{height:auto;width:100%;max-width:none;aspect-ratio:1071/1469;object-fit:cover}
-  .frame::after{content:none}
-  .hero-text{align-items:center;text-align:center;color:inherit;text-shadow:none;flex:none;justify-content:flex-start;width:100%;gap:14px}
-  .hero-text .top{display:flex;flex-direction:column;align-items:center;gap:10px}
-  .hero-text h1{color:var(--sage);font-size:clamp(46px,13vw,72px)}
-  .hero-text h1 .amp{display:inline;margin:0 .12em;color:var(--amp,var(--rose));font-size:.7em}
-  .hero-text .label,.count span{color:var(--muted)}
-  .date-row i{background:var(--line)}
-  .date-row time{font-size:clamp(16px,4.8vw,22px)}
-  .count{max-width:360px}
-  .count div{border-color:var(--line);background:var(--card)}
-  .hero-text .lead{display:none}
-  .hero-cta{display:flex;justify-content:center}
-  .scroll-cue{position:relative;left:auto;bottom:auto;transform:none;margin:8px auto 0;color:var(--muted)}
-  .scroll-cue i{background:linear-gradient(var(--sage),transparent)}
-  .facts .wrap{grid-auto-flow:row}
-  .fact{padding:12px 8px;gap:12px}
-  .fact+.fact{border-left:0;border-top:1px solid var(--line)}
-  .fact b{font-size:17px}
+  /* Portada a sangre: llena el viewport, foto recortada sin deformar */
+  .hero-main>.wrap{display:flex;flex-direction:column;justify-content:space-between;align-self:stretch;padding-block:clamp(24px,5vh,48px) clamp(40px,7vh,64px);position:static}
+  .hero-main>.wrap>.hero-text{position:relative;z-index:1}
+  .frame-wrap{position:absolute;inset:0;z-index:0;overflow:hidden}
+  .frame{position:absolute;inset:0;width:auto;height:auto;margin:0;max-width:none;padding:0;transform:none;box-shadow:none;background:transparent;overflow:hidden}
+  .frame img{position:absolute;inset:0;width:100%;height:100%;max-width:none;aspect-ratio:unset;object-fit:cover;object-position:center 42%}
+  .frame::after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(var(--overlay-rgb),.58) 0%,rgba(var(--overlay-rgb),.14) 28%,rgba(var(--overlay-rgb),0) 46%,rgba(var(--overlay-rgb),.2) 68%,rgba(var(--overlay-rgb),.7) 100%)}
+  .hero-text{align-items:center;text-align:center;color:var(--paper);text-shadow:0 1px 14px rgba(var(--overlay-rgb),.5);flex:1;justify-content:space-between;width:100%}
+  .hero-text .top{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .hero-text h1{color:var(--paper);font-size:clamp(44px,15vw,78px)}
+  .hero-text h1 .amp{display:inline;margin:0 .12em;color:var(--amp,var(--rose));font-size:.78em}
+  .hero-text .label{color:var(--amp,var(--paper))}
+  .count span,.count b{color:var(--paper)}
+  .date-row i{background:var(--amp,rgba(255,255,255,.85))}
+  .date-row time{font-size:clamp(18px,5.6vw,24px);color:var(--paper)}
+  .count div{border-color:color-mix(in srgb,var(--paper) 65%,transparent);background:rgba(var(--overlay-rgb),.28)}
+  .hero-text .lead,.hero-cta{display:none}
+  .scroll-cue{color:var(--paper)}
+  .scroll-cue i{background:linear-gradient(var(--amp,var(--paper)),transparent)}
+  .facts{display:none}
   .ribbon .track{font-size:20px}
   .rsvp{grid-template-columns:1fr}
   .invite-card{padding:10px}
@@ -437,7 +431,7 @@ footer .btn{margin-top:12px}
   .event{padding:26px 18px 22px}
   .panel{padding:44px 24px}
   /* Carruseles horizontales */
-  .carousel{touch-action:pan-x;display:flex!important;grid-template-columns:none!important;gap:16px!important;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;max-width:none!important;margin-inline:calc(-1 * var(--gutter))!important;padding:8px var(--gutter) 18px!important;scroll-padding-inline:var(--gutter);overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+  .carousel{touch-action:pan-x pan-y;display:flex!important;grid-template-columns:none!important;gap:16px!important;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;max-width:none!important;margin-inline:calc(-1 * var(--gutter))!important;padding:8px var(--gutter) 18px!important;scroll-padding-inline:var(--gutter);overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
   .carousel a,.carousel button{touch-action:manipulation}
   .carousel::-webkit-scrollbar{display:none}
   .carousel>*{flex:0 0 min(82%,380px);scroll-snap-align:center;min-width:0}
@@ -551,3 +545,7 @@ html[data-theme="olivo"] .invite-rule,html[data-theme="olivo"] .invite-date{colo
 html[data-theme="olivo"] .dress-dots i:nth-child(1){background:#F4EDE4}
 html[data-theme="olivo"] .dress-dots i:nth-child(2){background:#E5D0C4}
 html[data-theme="olivo"] .dress-dots i:nth-child(3){background:#C4A094}
+@media (max-width:900px){
+  html[data-theme="olivo"] .hero-text h1,html[data-theme="olivo"] .count b,html[data-theme="olivo"] .count span,html[data-theme="olivo"] .date-row time{color:var(--paper)}
+  html[data-theme="olivo"] .hero-text h1 .amp,html[data-theme="olivo"] .hero-text .label{color:var(--amp)}
+}
