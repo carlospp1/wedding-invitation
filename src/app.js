@@ -19,7 +19,10 @@
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   function toTop() {
     document.documentElement.style.scrollBehavior = 'auto';
-    (document.scrollingElement || document.documentElement).scrollTo(0, 0);
+    window.scrollTo(0, 0);
+    var se = document.scrollingElement || document.documentElement;
+    se.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
     document.documentElement.style.scrollBehavior = '';
   }
   function onLoadTop() { toTop(); }
@@ -32,8 +35,12 @@
     document.body.classList.add('locked');
     $('#seal').addEventListener('click', function () {
       removeEventListener('load', onLoadTop);
+      if (this.blur) this.blur();
+      toTop();
       env.classList.add('open');
       document.body.classList.remove('locked');
+      toTop();
+      requestAnimationFrame(toTop);
       hero.classList.add('go');
       setTimeout(function () { env.hidden = true; onScroll(); }, reduce ? 0 : 1800);
     });
