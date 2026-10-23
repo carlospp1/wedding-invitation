@@ -17,8 +17,6 @@ export const UI_DEFAULTS = {
   directions: 'Cómo llegar',
   venueGallery: 'Galería',
   venueAlt: 'Acuarela de {name}',
-  itinHint: 'Desliza hacia abajo',
-  itinOf: '{k} de {n} · {name}',
   copy: 'Copiar',
   copied: 'Copiado',
   copyFallback: 'Selecciona y copia',
@@ -69,6 +67,9 @@ export const UI_DEFAULTS = {
   suit: 'Traje',
   calTitle: 'Boda {first} y {second} - {event}',
   skip: 'Saltar al contenido',
+  themeAria: 'Diseño de la invitación',
+  themeOriginal: 'Original',
+  themeDiamond: 'Diamante',
 };
 
 // Identificadores (anclas #) de cada sección; se pueden cambiar con `id` en la configuración.
@@ -110,7 +111,7 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
   const txt = (s, label) => (isPending(s) && editorOn ? `<button type="button" class="edit" data-edit="${esc(label)}">${esc(s)}</button>` : rich(s));
   const img = (src, alt = '', o = {}) => {
     const d = dims[src] || {};
-    return `<img ${attrs({ src, alt, width: d.w, height: d.h, loading: o.eager ? undefined : 'lazy', decoding: o.eager ? undefined : 'async', fetchpriority: o.priority, class: o.cls, style: o.position ? `object-position:${o.position}` : undefined, id: o.id })}>`;
+    return `<img ${attrs({ src, alt, width: d.w, height: d.h, loading: o.eager ? undefined : 'lazy', decoding: o.eager ? undefined : 'async', fetchpriority: o.priority, class: o.cls, style: o.position ? `object-position:${o.position}` : undefined, id: o.id, draggable: 'false' })}>`;
   };
   const head = (s, extra = '') => `<div class="head r">${s.label ? `<div class="label">${rich(s.label)}</div>` : ''}<h2>${rich(s.title)}</h2>${extra}</div>`;
   const orn = '<div class="orn" aria-hidden="true"><i></i>✦<i></i></div>';
@@ -138,6 +139,13 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
   <div class="wrap">
     <a class="brand" href="#inicio">${esc(c.first[0])} &amp; ${esc(c.second[0])}</a>
     <ul>${navItems}</ul>
+    <div class="theme-switch" id="themes">
+      <button type="button" aria-expanded="false" aria-haspopup="true" aria-controls="theme-menu" aria-label="${esc(ui.themeAria)}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M12 3.2 20.8 12 12 20.8 3.2 12Z"/></svg></button>
+      <div class="theme-menu" id="theme-menu" role="listbox" aria-label="${esc(ui.themeAria)}" hidden>
+        <button type="button" role="option" data-theme="original">${esc(ui.themeOriginal)}</button>
+        <button type="button" role="option" data-theme="diamond">${esc(ui.themeDiamond)}</button>
+      </div>
+    </div>
   </div>
 </nav>`;
 
@@ -195,7 +203,7 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
     <div class="wrap">
       ${head(s, orn + (s.text ? `<p>${txt(s.text, `Texto de «${s.title}»`)}</p>` : ''))}
       <div class="story carousel" id="story">
-        ${s.photos.map((p) => `<figure class="pola r">${p.image ? img(p.image, p.alt, { position: p.position }) : editorOn ? `<button type="button" class="ph edit-ph" data-edit="${esc(fill(ui.pendingPhotoEdit, { caption: p.caption }))}" data-image="1" data-placeholder="${esc(fill(ui.editImgPlaceholder, { caption: p.caption }))}">${icon('camera', { size: 28, stroke: 1.3 })}${esc(ui.pendingPhoto)}<small>${esc(ui.pendingPhotoTap)}</small></button>` : `<div class="ph" aria-hidden="true">${icon('camera', { size: 28, stroke: 1.3 })}</div>`}<figcaption>${rich(p.caption)}</figcaption></figure>`).join('\n        ')}
+        ${s.photos.map((p) => `<figure class="pola r">${p.image ? img(p.image, p.alt, { position: p.position, eager: true }) : editorOn ? `<button type="button" class="ph edit-ph" data-edit="${esc(fill(ui.pendingPhotoEdit, { caption: p.caption }))}" data-image="1" data-placeholder="${esc(fill(ui.editImgPlaceholder, { caption: p.caption }))}">${icon('camera', { size: 28, stroke: 1.3 })}${esc(ui.pendingPhoto)}<small>${esc(ui.pendingPhotoTap)}</small></button>` : `<div class="ph" aria-hidden="true">${icon('camera', { size: 28, stroke: 1.3 })}</div>`}<figcaption>${rich(p.caption)}</figcaption></figure>`).join('\n        ')}
       </div>
       ${dots('story')}
     </div>
@@ -233,18 +241,16 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
   </section>`;
 
   S.itinerary = (s) => `
-  <section class="alt itin" id="${id('itinerary')}" style="--n:${s.items.length}">
-    <div class="itin-pin">
+  <section class="block alt itin" id="${id('itinerary')}" style="--n:${s.items.length}">
     <div class="wrap">
-      ${head(s, `<div class="itin-count" id="itin-count" aria-live="polite">${esc(ui.itinHint)}</div>`)}
+      ${head(s, orn)}
       <div class="tl-wrap" id="tl">
         <span class="tl-rail" aria-hidden="true"></span><span class="tl-fill" id="tl-fill" aria-hidden="true"></span>
         <ol class="tl">
-        ${s.items.map((i) => `<li><span class="node"></span><div class="item"><span class="ic">${icon(i.icon || 'heart')}</span><div><span class="t">${esc(i.time)}</span><b>${esc(i.title)}</b></div></div></li>`).join('\n        ')}
+        ${s.items.map((i, n) => `<li style="--i:${n}"><span class="node"></span><div class="item"><span class="ic">${icon(i.icon || 'heart')}</span><div><span class="t">${esc(i.time)}</span><b>${esc(i.title)}</b></div></div></li>`).join('\n        ')}
         </ol>
       </div>
       ${s.end ? `<div class="tl-end" id="tl-end">${rich(s.end)}</div>` : ''}
-    </div>
     </div>
   </section>`;
 
@@ -387,7 +393,7 @@ ${editorOn ? `<div class="overlay" id="editor" hidden>
     editWhatsapp: editorOn ? cfg.pendingEditor.whatsapp : '',
     verdicts: cfg.quiz?.verdicts || null,
     preload: images,
-    ui: Object.fromEntries(['itinHint', 'itinOf', 'copied', 'copyFallback', 'prev', 'next', 'goTo', 'score', 'thanksYes', 'thanksNo', 'waName', 'waAttend', 'waYes', 'waNo', 'waMenu', 'waSong', 'waNote', 'editHint', 'editHintImg', 'editMsg', 'editImgAttached', 'venueAlt'].map((k) => [k, ui[k]])),
+    ui: Object.fromEntries(['copied', 'copyFallback', 'prev', 'next', 'goTo', 'score', 'thanksYes', 'thanksNo', 'waName', 'waAttend', 'waYes', 'waNo', 'waMenu', 'waSong', 'waNote', 'editHint', 'editHintImg', 'editMsg', 'editImgAttached', 'venueAlt', 'themeAria', 'themeOriginal', 'themeDiamond'].map((k) => [k, ui[k]])),
   };
 
   /* ---------- <head>: SEO y redes ---------- */
@@ -411,10 +417,11 @@ ${editorOn ? `<div class="overlay" id="editor" hidden>
   const fonts = assets.fonts.map((f) => `<link rel="preload" href="${f}" as="font" type="font/woff2" crossorigin>`).join('\n');
 
   return `<!doctype html>
-<html lang="${esc(cfg.lang || 'es')}">
+<html lang="${esc(cfg.lang || 'es')}" data-theme="original">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script>(function(){try{var t=localStorage.getItem('invite-theme');if(t==='diamond'||t==='original')document.documentElement.setAttribute('data-theme',t)}catch(e){}})();</script>
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
 ${seo.indexable ? '<meta name="robots" content="index,follow,max-image-preview:large">' : '<meta name="robots" content="noindex,nofollow">'}
