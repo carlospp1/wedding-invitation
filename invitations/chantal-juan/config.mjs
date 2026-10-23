@@ -99,7 +99,7 @@ export default {
         icon: 'church',
         name: 'Catedral San Juan Bautista',
         address: 'San Juan de los Morros, Guárico',
-        maps: 'Catedral San Juan Bautista San Juan de los Morros',
+        maps: 'https://maps.app.goo.gl/du6SXzCv3GFPqBY4A',
         start: '2026-12-19T18:30:00-04:00',
         end: '2026-12-19T19:30:00-04:00',
         image: 'img/catedral.webp',
@@ -110,7 +110,7 @@ export default {
         icon: 'glasses',
         name: 'Centro Ítalo Venezolano',
         address: 'Calle San Miguel, Urbanización Los Laureles, San Juan de los Morros, Guárico',
-        maps: 'Centro Italo Venezolano San Juan de los Morros',
+        maps: 'https://maps.app.goo.gl/LpAKkd9BQYe7DvgG7',
         start: '2026-12-19T20:00:00-04:00',
         end: '2026-12-20T04:00:00-04:00',
         image: 'img/centro.webp',
@@ -155,16 +155,7 @@ export default {
     },
   },
 
-  gallery: {
-    nav: 'Galería',
-    label: 'Pintados en acuarela',
-    title: 'Galería',
-    photos: [
-      { image: 'img/portada.webp', alt: 'Acuarela de Chantal y Juan en la playa de hielo', caption: 'Playa de hielo', position: 'center 45%' },
-      { image: 'img/viaje.webp', alt: 'Acuarela de Chantal y Juan en Chichén Itzá', caption: 'Chichén Itzá' },
-      { image: 'img/pedida.webp', alt: 'Acuarela de la pedida de mano', caption: 'La pedida', position: 'center 40%' },
-    ],
-  },
+  gallery: null,
 
   quiz: {
     label: 'Un pequeño juego',

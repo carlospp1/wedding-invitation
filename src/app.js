@@ -11,23 +11,9 @@
   var fill = function (t, v) { return t.replace(/\{(\w+)\}/g, function (_, k) { return v[k] != null ? v[k] : ''; }); };
   var wa = function (num, text) {
     var n = String(num || '').replace(/\D/g, '');
-    return 'https://wa.me/' + n + (text ? '?text=' + encodeURIComponent(text) : '');
+    return 'https://api.whatsapp.com/send?phone=' + n + (text ? '&text=' + encodeURIComponent(text) : '');
   };
   var hero = $('#inicio');
-
-  function isNlBadge(n) {
-    return n && n.nodeType === 1 && (n.id === 'nl-badge-frame' || (n.tagName === 'IFRAME' && /Netlify/i.test(n.getAttribute('title') || '')));
-  }
-  function killNl(n) {
-    if (isNlBadge(n)) { n.remove(); return; }
-    if (!n || !n.querySelector) return;
-    var f = n.querySelector('#nl-badge-frame, iframe[title="Powered by Netlify"]');
-    if (f) f.remove();
-  }
-  $$('#nl-badge-frame, iframe[title="Powered by Netlify"]').forEach(function (n) { n.remove(); });
-  new MutationObserver(function (ms) {
-    ms.forEach(function (m) { Array.prototype.forEach.call(m.addedNodes, killNl); });
-  }).observe(document.documentElement, { childList: true, subtree: true });
 
   /* ---------- Sobre ---------- */
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
@@ -90,14 +76,12 @@
     grouped.forEach(function (c) { io.observe(c); });
   }
 
-  /* ---------- Scroll: progreso, menú, botón flotante, parallax e itinerario ---------- */
+  /* ---------- Scroll: progreso, menú, botón flotante y parallax ---------- */
   var bar = $('#progress'), nav = $('#nav'), fcta = $('#float-cta'), par = $('#parallax'), foot = $('#foot-img'), rsvpSec = $('#rsvp') && $('#rsvp').closest('section');
-  var itin = $('.itin'), fill_ = $('#tl-fill'), items = $$('.tl li'), end = $('#tl-end'), cnt = $('#itin-count'), lastK = -1;
-  var NAMES = items.map(function (li) { return li.querySelector('b').textContent; });
   var links = $$('.nav ul a'), secs = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
   var ticking = false;
   function onScroll() {
-    var y = scrollY, h = document.documentElement.scrollHeight - innerHeight, navH = nav ? nav.getBoundingClientRect().height : 0;
+    var y = scrollY, h = document.documentElement.scrollHeight - innerHeight;
     if (bar) bar.style.transform = 'scaleX(' + (h > 0 ? y / h : 0) + ')';
     if (nav) nav.classList.toggle('scrolled', y > 10);
     if (fcta) {
@@ -107,40 +91,51 @@
     }
     if (!reduce && innerWidth > 900 && par) par.style.transform = 'translateY(' + (y * .08) + 'px)';
     if (!reduce && foot) { var fr = foot.parentNode.getBoundingClientRect(); if (fr.top < innerHeight) foot.style.transform = 'translateY(' + ((fr.top - innerHeight) * .12) + 'px)'; }
-    if (itin && items.length) {
-      var ir = itin.getBoundingClientRect(), run = ir.height - (innerHeight - navH);
-      var pin = $('.itin-pin');
-      if (fcta && pin && ir.top <= navH + 2 && ir.bottom >= innerHeight - 2) fcta.classList.remove('show');
-      var pinned = pin && getComputedStyle(pin).position === 'sticky';
-      var ip = reduce || !pinned ? 1 : Math.min(1, Math.max(0, (navH - ir.top) / (run > 0 ? run : 1)));
-      var n = items.length, k = Math.min(n, Math.floor(ip * (n + 1.2)));
-      if (k !== lastK) {
-        lastK = k;
-        items.forEach(function (li, i) { li.classList.toggle('on', i < k); li.classList.toggle('cur', i === k - 1 && k <= n); });
-        if (fill_) fill_.style.height = (k === 0 ? 0 : items[k - 1].offsetTop + items[k - 1].offsetHeight / 2) + 'px';
-        if (cnt) cnt.textContent = k === 0 ? UI.itinHint : fill(UI.itinOf, { k: k, n: n, name: NAMES[k - 1] });
-      }
-      if (end) end.classList.toggle('on', k >= n && ip > .92);
-    }
     var cur = -1;
     secs.forEach(function (s, i) { if (s && s.getBoundingClientRect().top < innerHeight * .35) cur = i; });
     links.forEach(function (a, i) { a.classList.toggle('active', i === cur); if (i === cur) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
     ticking = false;
   }
   addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
-  addEventListener('resize', function () { lastK = -1; onScroll(); });
+  addEventListener('resize', onScroll);
   onScroll();
 
-  function scroller() { return document.scrollingElement || document.documentElement; }
+  function scrollPos() {
+    return window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+  }
+  function setScroll(y) {
+    var html = document.documentElement, body = document.body;
+    html.style.scrollBehavior = 'auto';
+    if (body) body.style.scrollBehavior = 'auto';
+    html.scrollTop = y;
+    if (body) body.scrollTop = y;
+    if (window.scrollTo) window.scrollTo(0, y);
+  }
+  var scrollAnim = 0;
   function goTo(el, instant) {
     if (!el) return;
+    if (scrollAnim) { cancelAnimationFrame(scrollAnim); scrollAnim = 0; }
     var navH = nav ? nav.getBoundingClientRect().height : 0;
-    var y = 0, n = el;
-    while (n) { y += n.offsetTop; n = n.offsetParent; }
-    y = Math.max(0, y - navH);
-    var opt = { top: y, left: 0, behavior: instant || reduce ? 'auto' : 'smooth' };
-    try { scroller().scrollTo(opt); } catch (e) { scroller().scrollTop = y; }
-    try { window.scrollTo(opt); } catch (e2) { window.scrollTo(0, y); }
+    var from = scrollPos();
+    var to = Math.max(0, Math.round(el.getBoundingClientRect().top + from - navH));
+    if (instant || reduce || Math.abs(to - from) < 2) { setScroll(to); return; }
+    var t0 = 0;
+    var dur = Math.min(800, Math.max(320, Math.abs(to - from) * 0.35));
+    function step(now) {
+      if (!t0) t0 = now;
+      var p = Math.min(1, (now - t0) / dur);
+      setScroll(from + (to - from) * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) scrollAnim = requestAnimationFrame(step);
+      else scrollAnim = 0;
+    }
+    scrollAnim = requestAnimationFrame(step);
+    setTimeout(function () {
+      if (Math.abs(scrollPos() - from) < 4) {
+        if (scrollAnim) cancelAnimationFrame(scrollAnim);
+        scrollAnim = 0;
+        setScroll(to);
+      }
+    }, 100);
   }
   function jumpHash() {
     var el = location.hash && location.hash.length > 1 && $(location.hash);
@@ -148,20 +143,23 @@
   }
   jumpHash();
   addEventListener('load', jumpHash);
-  document.addEventListener('click', function (e) {
-    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    var a = e.target.closest('a[href^="#"]');
+  function onHashClick(e) {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    if (e.button != null && e.button !== 0) return;
+    var a = e.target.closest && e.target.closest('a[href^="#"]');
     if (!a || a.target === '_blank') return;
     var href = a.getAttribute('href');
-    if (!href || href === '#') return;
+    if (!href || href === '#' || /^https?:/i.test(href)) return;
     var id = decodeURIComponent(href.slice(1));
     var el = id && document.getElementById(id);
     if (!el) return;
     e.preventDefault();
+    e.stopPropagation();
     if (history.pushState) history.pushState(null, '', href);
     else location.hash = href;
     goTo(el);
-  });
+  }
+  document.addEventListener('click', onHashClick);
   addEventListener('popstate', function () {
     goTo(location.hash && $(location.hash) || hero, true);
   });
@@ -252,6 +250,16 @@
       ta.oninput = upd; upd(); openOv(editor); setTimeout(function () { ta.focus(); }, 50);
     }, true);
     $('#editor-form').addEventListener('submit', function (e) { e.preventDefault(); });
+    var edSend = $('#editor-send');
+    if (edSend) {
+      edSend.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        document.body.classList.remove('locked');
+        var url = edSend.getAttribute('href');
+        if (url && url.indexOf('http') === 0) location.assign(url);
+      });
+    }
   }
 
   /* ---------- Carruseles (móvil): puntos, flechas y arrastre solo horizontal ---------- */
@@ -419,7 +427,7 @@
         var url = waBtn.getAttribute('href');
         if (!url || url.indexOf('http') !== 0) return;
         e.preventDefault();
-        window.location.href = url;
+        location.assign(url);
       });
     }
     $('#edit').addEventListener('click', function () { thanks.hidden = true; form.hidden = false; $('#r-name').focus(); });

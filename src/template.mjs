@@ -233,7 +233,7 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
     </div>
   </section>`;
 
-  const mapsHref = (e) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.maps || `${e.name} ${e.address || ''}`)}`;
+  const mapsHref = (e) => (/^https?:\/\//i.test(e.maps) ? e.maps : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.maps || `${e.name} ${e.address || ''}`)}`);
   const calHref = (e) => `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(fill(ui.calTitle, { first: c.first, second: c.second, event: e.label }))}&dates=${gcal(e.start)}/${gcal(e.end || e.start)}&location=${encodeURIComponent([e.name, e.address].filter(Boolean).join(', '))}`;
   const eventCard = (e) => `<article class="card event lift r">
           ${e.image ? `<div class="event-arch">
@@ -250,7 +250,9 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
           </div>
         </article>`;
   const dressCard = (d) => !d ? '' : `<article class="card event event-dress lift r">
-          <div class="event-arch event-arch-plain" aria-hidden="true">${icon('dress', { size: 36, stroke: 1.1 })}<span class="dress-dots"><i></i><i></i><i></i></span></div>
+          <div class="event-arch">
+            <div class="event-arch-plain" aria-hidden="true">${icon('dress', { size: 36, stroke: 1.1 })}<span class="dress-dots"><i></i><i></i><i></i></span></div>
+          </div>
           <div class="label">${esc(d.label)}</div>
           <h3 class="script">${esc(d.title)}</h3>
           <p class="addr">${rich(d.text)}</p>
@@ -270,18 +272,20 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
   </section>`;
 
   S.itinerary = (s) => `
-  <section class="alt itin" id="${id('itinerary')}" style="--n:${s.items.length}">
-    <div class="itin-pin">
+  <section class="block alt itin" id="${id('itinerary')}">
     <div class="wrap">
-      ${head(s, `<div class="itin-count" id="itin-count" aria-live="polite">${esc(ui.itinHint)}</div>`)}
-      <div class="tl-wrap" id="tl">
-        <span class="tl-rail" aria-hidden="true"></span><span class="tl-fill" id="tl-fill" aria-hidden="true"></span>
+      ${head(s, orn)}
+      <div class="tl-wrap">
+        <span class="tl-rail" aria-hidden="true"></span>
         <ol class="tl">
-        ${s.items.map((i) => `<li><span class="node"></span><div class="item"><span class="ic">${icon(i.icon || 'heart')}</span><div><span class="t">${esc(i.time)}</span><b>${esc(i.title)}</b></div></div></li>`).join('\n        ')}
+        ${s.items.map((i) => `<li>
+          <span class="ic">${icon(i.icon || 'heart', { size: 22, stroke: 1.3 })}</span>
+          <span class="node" aria-hidden="true"></span>
+          <div class="meta"><span class="t">${esc(i.time)}</span><b>${esc(i.title)}</b></div>
+        </li>`).join('\n        ')}
         </ol>
       </div>
-      ${s.end ? `<div class="tl-end" id="tl-end">${rich(s.end)}</div>` : ''}
-    </div>
+      ${s.end ? `<div class="tl-end">${rich(s.end)}</div>` : ''}
     </div>
   </section>`;
 
@@ -371,7 +375,7 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
         <div class="card thanks" id="thanks" hidden>
           <div class="script thanks-title">${esc(ui.thanks)}</div>
           <p id="thanks-text"></p>
-          <a class="btn solid" id="wa" rel="noopener" href="https://wa.me/${esc(String(s.whatsapp).replace(/\D/g, ''))}">${esc(ui.sendWa)} <span class="arr" aria-hidden="true">→</span></a>
+          <a class="btn solid" id="wa" href="https://api.whatsapp.com/send?phone=${esc(String(s.whatsapp).replace(/\D/g, ''))}">${esc(ui.sendWa)} <span class="arr" aria-hidden="true">→</span></a>
           <button class="btn" type="button" id="edit">${esc(ui.modify)}</button>
         </div>
       </div>
@@ -408,7 +412,7 @@ ${editorOn ? `<div class="overlay" id="editor" hidden>
     <p id="editor-hint" class="muted"></p>
     <label for="editor-text" class="flabel start">${esc(ui.editNew)}</label>
     <textarea id="editor-text"></textarea>
-    <a class="btn solid" id="editor-send" target="_blank" rel="noopener" href="https://wa.me/${esc(cfg.pendingEditor.whatsapp)}">${esc(ui.editSend)} <span class="arr" aria-hidden="true">→</span></a>
+    <a class="btn solid" id="editor-send" href="https://api.whatsapp.com/send?phone=${esc(String(cfg.pendingEditor.whatsapp).replace(/\D/g, ''))}">${esc(ui.editSend)} <span class="arr" aria-hidden="true">→</span></a>
   </form>
 </div>` : ''}
 <div class="overlay lightbox" id="lightbox" hidden>

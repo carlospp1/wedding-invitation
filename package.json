@@ -7,6 +7,6 @@
   "engines": { "node": ">=18" },
   "scripts": {
     "build": "node build.mjs",
-    "preview": "node build.mjs && node scripts/serve.mjs dist"
+    "preview": "node scripts/preview.mjs"
   }
 }
