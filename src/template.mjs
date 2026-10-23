@@ -182,7 +182,8 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
 
   /* ---------- secciones ---------- */
   const it = cfg.intro;
-  const parentCol = (p) => `<div><div class="label">${esc(p.label)}</div><div class="script">${p.names.map((n) => `<span class="typewrite">${esc(n)}</span>`).join('')}</div></div>`;
+  const cardName = (i) => (Array.isArray(c.fullNames) && c.fullNames[i]) || (i === 0 ? c.first : c.second);
+  const parentCol = (p) => `<div><div class="label">${esc(p.label)}</div><div class="script">${p.names.map((n) => `<span class="typewrite" data-text="${esc(n)}"></span>`).join('')}</div></div>`;
   const intro = !it ? '' : `
   <section class="block intro-block" aria-label="${esc(namesTxt)}">
     <div class="wrap">
@@ -193,7 +194,7 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
           ${it.parents?.length ? `<div class="invite-parents">${it.parents.map(parentCol).join(it.parents.length === 2 ? '<span class="invite-amp" aria-hidden="true">&amp;</span>' : '')}</div>` : ''}
           <div class="invite-rule" aria-hidden="true"><i></i></div>
           ${it.text ? `<p class="invite-lead">${rich(it.text)}</p>` : ''}
-          <p class="invite-names"><span class="typewrite-ghost" aria-hidden="true">${esc(c.first)} <span class="amp">&amp;</span> ${esc(c.second)}</span><span class="typewrite-live"><span class="typewrite">${esc(c.first)}</span> <span class="amp typewrite-amp">&amp;</span> <span class="typewrite">${esc(c.second)}</span></span></p>
+          <p class="invite-names"><span class="typewrite-ghost" aria-hidden="true"><span>${esc(cardName(0))}</span><span class="amp">&amp;</span><span>${esc(cardName(1))}</span></span><span class="typewrite-live"><span class="typewrite" data-text="${esc(cardName(0))}"></span><span class="amp typewrite-amp is-off">&amp;</span><span class="typewrite" data-text="${esc(cardName(1))}"></span></span></p>
           <p class="invite-date">${esc(inviteDate(cfg.date))}</p>
         </div>
       </article>
@@ -459,12 +460,14 @@ ${dims[seo.image] ? `<meta property="og:image:width" content="${dims[seo.image].
 ${touchIcon ? '<link rel="apple-touch-icon" href="apple-touch-icon.png">' : ''}
 ${fonts}
 <link rel="preload" as="image" href="${esc(h.image)}" fetchpriority="high">
+<style>html{background:#F5F0E6}html:not(.is-ready) body{overflow:hidden;height:100dvh}.boot{position:fixed;inset:0;z-index:90;background:#F5F0E6}</style>
 <link rel="stylesheet" href="${assets.css}">
 ${themeVars ? `<style>:root{${esc(themeVars).replace(/&#39;/g, "'").replace(/&quot;/g, '"')}}</style>` : ''}
 ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, '\\u003c')}</script>` : ''}
 </head>
-<body>
-<noscript><style>.envelope{display:none}</style></noscript>
+<body class="locked">
+<noscript><style>.envelope,.boot{display:none}html{overflow:auto}body{overflow:auto;height:auto}.typewrite[data-text]::before{content:attr(data-text)}.invite-names .typewrite-amp{opacity:1}</style></noscript>
+<div class="boot" id="boot" aria-hidden="true"></div>
 <a class="skip" href="#main">${esc(ui.skip)}</a>
 <div class="progress" id="progress" aria-hidden="true"></div>
 ${envelope}

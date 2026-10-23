@@ -15,6 +15,33 @@
   };
   var hero = $('#inicio');
 
+  /* ---------- Precarga: no mostrar el sobre hasta fuentes + portada ---------- */
+  function whenReady(fn) {
+    var done = false;
+    function go() {
+      if (done) return;
+      done = true;
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          document.documentElement.classList.add('is-ready');
+          if (fn) fn();
+        });
+      });
+    }
+    var tasks = [];
+    if (document.fonts && document.fonts.ready) tasks.push(document.fonts.ready.then(null, function () {}));
+    $$('.hero .frame img, img[fetchpriority="high"]').forEach(function (img) {
+      if (img.complete && img.naturalWidth) return;
+      tasks.push(new Promise(function (res) {
+        img.addEventListener('load', res, { once: true });
+        img.addEventListener('error', res, { once: true });
+      }));
+    });
+    if (!tasks.length) go();
+    else Promise.all(tasks).then(go);
+    setTimeout(go, 4500);
+  }
+
   /* ---------- Sobre ---------- */
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   function toTop() {
@@ -27,8 +54,9 @@
   }
   function onLoadTop() { toTop(); }
   var env = $('#envelope');
+  var skipEnv = !!(env && location.hash && location.hash.length > 1 && $(location.hash));
   // Si la página se abre con un ancla (#confirmar), se salta el sobre.
-  if (env && location.hash && location.hash.length > 1 && $(location.hash)) {
+  if (skipEnv) {
     env.hidden = true; hero.classList.add('go');
   } else if (env) {
     toTop(); addEventListener('load', onLoadTop);
@@ -70,53 +98,26 @@
       n += 1;
       el.textContent = text.slice(0, n);
       if (n < text.length) {
-        setTimeout(step, text.charAt(n - 1) === ' ' ? 88 : 42 + Math.random() * 38);
+        setTimeout(step, text.charAt(n - 1) === ' ' ? 188 : 142 + Math.random() * 38);
       } else {
         el.classList.remove('is-typing');
-        setTimeout(done, 200);
+        if (done) setTimeout(done, 200);
       }
     }
     if (!text) { if (done) done(); return; }
     step();
   }
-  function typeColumn(els, done) {
-    var i = 0;
-    function next() {
-      if (i >= els.length) { if (done) done(); return; }
-      typeLine(els[i], next);
-      i += 1;
-    }
-    next();
-  }
-  function writeCouple() {
-    var names = $$('.invite-names .typewrite');
-    if (!names.length) return;
-    typeLine(names[0], function () {
-      if (coupleAmp) coupleAmp.classList.remove('is-off');
-      if (names[1]) typeLine(names[1]);
-    });
-  }
   function startCardWrite() {
     if (reduce || startCardWrite.ran || !cardLines.length) return;
     startCardWrite.ran = true;
-    var cols = $$('.invite-parents > div');
-    if (!cols.length) {
-      setTimeout(writeCouple, 420);
-      return;
-    }
-    var left = cols.length;
-    cols.forEach(function (col, i) {
-      setTimeout(function () {
-        typeColumn($$('.typewrite', col), function () {
-          left -= 1;
-          if (left <= 0) setTimeout(writeCouple, 260);
-        });
-      }, 420 + i * 160);
-    });
+    setTimeout(function () {
+      if (coupleAmp) coupleAmp.classList.remove('is-off');
+      cardLines.forEach(function (el) { typeLine(el); });
+    }, 100);
   }
   if (!reduce && cardLines.length) {
     cardLines.forEach(function (el) {
-      el.setAttribute('data-text', el.textContent);
+      if (!el.getAttribute('data-text')) el.setAttribute('data-text', el.textContent);
       el.textContent = '';
     });
     if (coupleAmp) coupleAmp.classList.add('is-off');
@@ -128,7 +129,6 @@
       if (!e.isIntersecting) return;
       e.target.classList.remove('pre');
       $$('.pre', e.target).forEach(function (x) { x.classList.remove('pre'); });
-      if (e.target.classList.contains('invite-card') || e.target.querySelector('.typewrite')) startCardWrite();
       io.unobserve(e.target);
     });
   }, { threshold: .12, rootMargin: '80px 0px' }) : null;
@@ -146,8 +146,21 @@
     });
     grouped.forEach(function (c) { io.observe(c); });
   }
-  var inviteCard = $('.invite-card');
-  if (inviteCard && !inviteCard.classList.contains('pre')) startCardWrite();
+  var writeZone = $('.invite-names') || $('.invite-parents');
+  if (writeZone && !reduce && cardLines.length) {
+    var writeIo = 'IntersectionObserver' in window ? new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        startCardWrite();
+        writeIo.unobserve(e.target);
+      });
+    }, { threshold: 0.45, rootMargin: '0px 0px -16% 0px' }) : null;
+    if (writeIo) writeIo.observe(writeZone);
+    else startCardWrite();
+  }
+  whenReady(function () {
+    if (skipEnv) document.body.classList.remove('locked');
+  });
 
   /* ---------- Scroll: progreso, menú, botón flotante y parallax ---------- */
   var bar = $('#progress'), nav = $('#nav'), fcta = $('#float-cta'), par = $('#parallax'), foot = $('#foot-img'), rsvpSec = $('#rsvp') && $('#rsvp').closest('section');
