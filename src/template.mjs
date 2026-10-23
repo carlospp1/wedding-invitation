@@ -1,0 +1,463 @@
+// Genera el HTML de la invitación a partir de la configuración.
+// Cada sección es opcional: si falta en la configuración (o vale null/false), no se pinta.
+import { icon, LEAF } from './icons.mjs';
+
+export const UI_DEFAULTS = {
+  envelopeHint: 'Tienes una invitación',
+  envelopeTap: 'Toca el sello para abrir',
+  envelopeOpen: 'Abrir la invitación',
+  navAria: 'Secciones',
+  countdownAria: 'Cuenta atrás hasta la boda',
+  units: ['días', 'horas', 'min', 'seg'],
+  ctaConfirm: 'Confirmar asistencia',
+  ctaDetails: 'Ver detalles',
+  ctaShort: 'Confirmar',
+  scrollCue: 'Bajar a la invitación',
+  addCalendar: 'Agregar al calendario',
+  directions: 'Cómo llegar',
+  venueGallery: 'Galería',
+  venueAlt: 'Acuarela de {name}',
+  itinHint: 'Desliza hacia abajo',
+  itinOf: '{k} de {n} · {name}',
+  copy: 'Copiar',
+  copied: 'Copiado',
+  copyFallback: 'Selecciona y copia',
+  zoom: 'Ampliar: {caption}',
+  prev: 'Anterior',
+  next: 'Siguiente',
+  goTo: 'Ir al elemento {i}',
+  score: '{s} de {n} aciertos',
+  editAnswers: 'Editar respuestas',
+  rsvpNav: 'Confirmar',
+  rsvpBefore: 'Antes del',
+  name: 'Nombre completo',
+  attendGroup: '¿Asistirás?',
+  attendYes: 'Asistiré',
+  attendNo: 'No podré asistir',
+  menu: 'Elige tu menú',
+  song: 'Una canción que no puede faltar',
+  note: 'Mensaje para los novios',
+  nameError: 'Escribe tu nombre para poder confirmar.',
+  submit: 'Preparar confirmación',
+  thanks: '¡Gracias!',
+  sendWa: 'Enviar por WhatsApp',
+  modify: 'Modificar respuesta',
+  thanksYes: 'Qué ilusión, {name}. Pulsa el botón para enviarnos tu confirmación por WhatsApp.',
+  thanksNo: 'Te echaremos de menos, {name}. Pulsa el botón para avisarnos por WhatsApp.',
+  waHeader: 'Confirmación boda {couple} ({date})',
+  waName: 'Nombre',
+  waAttend: 'Asistiré',
+  waYes: 'Sí',
+  waNo: 'No',
+  waMenu: 'Menú',
+  waSong: 'Canción',
+  waNote: 'Mensaje',
+  close: 'Cerrar',
+  editTitle: 'Editar invitación',
+  editNew: 'Nuevo texto',
+  editSend: 'Enviar cambio por WhatsApp',
+  editHint: 'Escribe cómo quieres que quede. El cambio te llega por WhatsApp.',
+  editHintImg: 'Describe la imagen o deja una nota. Después adjunta la imagen en el chat de WhatsApp.',
+  editImgPlaceholder: 'Te envío la imagen de «{caption}»',
+  editMsg: 'Cambio en la invitación de boda',
+  editImgAttached: '(adjunto imagen)',
+  pendingPhoto: 'Imagen pendiente',
+  pendingPhotoTap: 'Toca para enviarla',
+  pendingPhotoEdit: 'Imagen de «{caption}»',
+  pendingId: 'Editar {label}',
+  dress: 'Vestido',
+  suit: 'Traje',
+  calTitle: 'Boda {first} y {second} - {event}',
+  skip: 'Saltar al contenido',
+};
+
+// Identificadores (anclas #) de cada sección; se pueden cambiar con `id` en la configuración.
+const IDS = { story: 'historia', events: 'eventos', itinerary: 'itinerario', gifts: 'regalos', gallery: 'galeria', quiz: 'juego', rsvp: 'confirmar' };
+
+/* ---------- utilidades ---------- */
+export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const rich = (s) => esc(s).replace(/\*([^*]+)\*/g, '<em>$1</em>').replace(/\n/g, '<br>');
+const fill = (tpl, vars) => tpl.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
+export const isPending = (s) => typeof s === 'string' && /^\s*\[[\s\S]*\]\s*$/.test(s);
+const attrs = (o) => Object.entries(o).filter(([, v]) => v !== undefined && v !== null && v !== false).map(([k, v]) => (v === true ? k : `${k}="${esc(v)}"`)).join(' ');
+
+export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false }) {
+  const ui = { ...UI_DEFAULTS, ...(cfg.ui || {}) };
+  const L = cfg.locale || cfg.lang || 'es';
+  const TZ = cfg.timeZone || 'UTC';
+  const editorOn = !!cfg.pendingEditor?.whatsapp;
+  const c = cfg.couple;
+  const names = `${c.first} &amp; ${c.second}`;
+  const namesTxt = `${c.first} & ${c.second}`;
+
+  /* ---------- fechas ---------- */
+  const dt = (iso, o) => new Intl.DateTimeFormat(L, { timeZone: TZ, ...o }).formatToParts(new Date(iso)).reduce((a, p) => ((a[p.type] = p.value), a), {});
+  const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+  const dotDate = (iso) => { const p = dt(iso, { day: '2-digit', month: '2-digit', year: 'numeric' }); return `${p.day}.${p.month}.${p.year}`; };
+  const longDay = (iso) => { const p = dt(iso, { weekday: 'long', day: 'numeric', month: 'long' }); return cap(`${p.weekday} ${p.day} de ${p.month}`); };
+  const longDate = (iso) => { const p = dt(iso, { day: 'numeric', month: 'long', year: 'numeric' }); return `${p.day} de ${p.month} de ${p.year}`; };
+  const year = (iso) => dt(iso, { year: 'numeric' }).year;
+  const time = (iso) => {
+    if (cfg.clock === 24) { const p = dt(iso, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }); return `${p.hour}:${p.minute}`; }
+    const p = new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit', hour12: true }).formatToParts(new Date(iso)).reduce((a, x) => ((a[x.type] = x.value), a), {});
+    return `${p.hour}:${p.minute} ${p.dayPeriod.toUpperCase()}`;
+  };
+  const gcal = (iso) => new Date(iso).toISOString().replace(/[-:]|\.\d{3}/g, '');
+  const DOT = dotDate(cfg.date);
+
+  /* ---------- piezas ---------- */
+  // Texto que, si está pendiente ("[...]"), se convierte en botón de edición.
+  const txt = (s, label) => (isPending(s) && editorOn ? `<button type="button" class="edit" data-edit="${esc(label)}">${esc(s)}</button>` : rich(s));
+  const img = (src, alt = '', o = {}) => {
+    const d = dims[src] || {};
+    return `<img ${attrs({ src, alt, width: d.w, height: d.h, loading: o.eager ? undefined : 'lazy', decoding: o.eager ? undefined : 'async', fetchpriority: o.priority, class: o.cls, style: o.position ? `object-position:${o.position}` : undefined, id: o.id })}>`;
+  };
+  const head = (s, extra = '') => `<div class="head r">${s.label ? `<div class="label">${rich(s.label)}</div>` : ''}<h2>${rich(s.title)}</h2>${extra}</div>`;
+  const orn = '<div class="orn" aria-hidden="true"><i></i>✦<i></i></div>';
+  const leaf = (cls) => `<svg class="leaf ${cls}" viewBox="0 0 120 240" fill="none" aria-hidden="true">${LEAF}</svg>`;
+  const dots = (id) => `<div class="dots" data-for="${id}"></div>`;
+  const id = (k) => cfg[k]?.id || IDS[k];
+  const sections = ['story', 'events', 'itinerary', 'gifts', 'gallery', 'quiz', 'rsvp'].filter((k) => cfg[k]);
+
+  /* ---------- sobre, menú y portada ---------- */
+  const envelope = `
+<div class="envelope" id="envelope">
+  <div class="hint envelope-hint">${esc(ui.envelopeHint)}</div>
+  <div class="env">
+    <div class="back"></div>
+    <div class="letter"><span class="label">${esc(cfg.hero?.label || '')}</span><span class="script">${names}</span><span class="letter-date">${DOT}</span></div>
+    <div class="front"></div><div class="flap"></div>
+    <button class="seal" id="seal" type="button" aria-label="${esc(ui.envelopeOpen)}">${esc(c.initials)}</button>
+  </div>
+  <div class="label hint">${esc(ui.envelopeTap)}</div>
+</div>`;
+
+  const navItems = sections.filter((k) => cfg[k].nav || k === 'rsvp').map((k) => `<li><a href="#${id(k)}">${esc(k === 'rsvp' ? cfg.rsvp.nav || ui.rsvpNav : cfg[k].nav)}</a></li>`).join('');
+  const nav = cfg.nav === false ? '' : `
+<nav class="nav" id="nav" aria-label="${esc(ui.navAria)}">
+  <div class="wrap">
+    <a class="brand" href="#inicio">${esc(c.first[0])} &amp; ${esc(c.second[0])}</a>
+    <ul>${navItems}</ul>
+  </div>
+</nav>`;
+
+  const h = cfg.hero || {};
+  const evs = cfg.events?.list || [];
+  const ribbon = h.ribbon || [namesTxt, DOT.split('.').join(' · '), cfg.city, cfg.region].filter(Boolean);
+  const facts = [
+    { icon: 'calendar', title: longDay(cfg.date), sub: [year(cfg.date), cfg.city].filter(Boolean).join(' · ') },
+    ...evs.slice(0, 2).map((e) => ({ icon: e.icon || 'calendar', title: `${e.short || e.label} · ${time(e.start)}`, sub: e.name })),
+  ];
+  const hero = `
+<header class="hero" id="inicio">
+  <div class="hero-main">
+    <div class="wrap">
+      <div class="frame-wrap" id="parallax"><div class="frame">${img(h.image, h.imageAlt, { eager: true, priority: 'high' })}</div></div>
+      <div class="hero-text">
+        <div class="top">
+          <div class="label in hero-label">${esc(h.label || '')}</div>
+          <h1 class="in">${esc(c.first)}<span class="amp">&amp;</span>${esc(c.second)}</h1>
+          <div class="date-row in"><i></i><time datetime="${esc(cfg.date)}">${DOT}</time><i></i></div>
+        </div>
+        ${h.lead ? `<p class="lead in">${rich(h.lead)}</p>` : ''}
+        <div class="count in" role="timer" aria-label="${esc(ui.countdownAria)}">
+          ${['d', 'h', 'm', 's'].map((u, i) => `<div><b id="cd-${u}">0</b><span>${esc(ui.units[i])}</span></div>`).join('')}
+        </div>
+        ${cfg.rsvp || cfg.events ? `<div class="hero-cta in">${cfg.rsvp ? `<a class="btn solid" href="#${id('rsvp')}">${esc(ui.ctaConfirm)} <span class="arr" aria-hidden="true">→</span></a>` : ''}${cfg.events ? `<a class="btn" href="#${id('events')}">${esc(ui.ctaDetails)}</a>` : ''}</div>` : ''}
+      </div>
+    </div>
+    <a class="scroll-cue" href="#${id(sections[0]) || 'inicio'}" aria-label="${esc(ui.scrollCue)}"><i></i></a>
+  </div>
+  <div class="facts"><div class="wrap">
+    ${facts.map((f) => `<div class="fact">${icon(f.icon)}<div><b>${esc(f.title)}</b><span>${esc(f.sub)}</span></div></div>`).join('')}
+  </div></div>
+  <div class="ribbon" aria-hidden="true"><div class="track" id="track"><div class="set">${ribbon.map((t) => `<span>${esc(t)}</span>`).join('')}</div></div></div>
+</header>`;
+
+  /* ---------- secciones ---------- */
+  const it = cfg.intro;
+  const intro = !it ? '' : `
+  <section class="block intro-block" aria-label="${esc(namesTxt)}">
+    ${leaf('leaf-a')}
+    <div class="wrap intro">
+      <div class="intro-text r">
+        ${it.blessing ? `<p class="blessing">${rich(it.blessing)}</p>` : ''}
+        <p class="lead">${rich(it.text)}</p>
+      </div>
+      ${it.parents?.length ? `<div class="parents r">${it.parents.map((p) => `<div><div class="label">${esc(p.label)}</div><div class="script">${p.names.map(esc).join('<br>')}</div></div>`).join('')}</div>` : ''}
+    </div>
+  </section>`;
+
+  const S = {};
+  S.story = (s) => `
+  <section class="block alt" id="${id('story')}">
+    <div class="wrap">
+      ${head(s, orn + (s.text ? `<p>${txt(s.text, `Texto de «${s.title}»`)}</p>` : ''))}
+      <div class="story carousel" id="story">
+        ${s.photos.map((p) => `<figure class="pola r">${p.image ? img(p.image, p.alt, { position: p.position }) : editorOn ? `<button type="button" class="ph edit-ph" data-edit="${esc(fill(ui.pendingPhotoEdit, { caption: p.caption }))}" data-image="1" data-placeholder="${esc(fill(ui.editImgPlaceholder, { caption: p.caption }))}">${icon('camera', { size: 28, stroke: 1.3 })}${esc(ui.pendingPhoto)}<small>${esc(ui.pendingPhotoTap)}</small></button>` : `<div class="ph" aria-hidden="true">${icon('camera', { size: 28, stroke: 1.3 })}</div>`}<figcaption>${rich(p.caption)}</figcaption></figure>`).join('\n        ')}
+      </div>
+      ${dots('story')}
+    </div>
+  </section>`;
+
+  S.events = (s) => `
+  <section class="block" id="${id('events')}">
+    ${leaf('leaf-b')}
+    <div class="wrap">
+      ${head({ ...s, label: s.label || longDate(cfg.date) }, orn)}
+      <div class="events carousel" id="events">
+        ${s.list.map((e) => `<article class="card event lift r">
+          <div class="label">${esc(e.label)}</div>
+          <h3 class="script">${esc(e.name)}</h3>
+          ${e.address ? `<address class="addr">${esc(e.address)}</address>` : ''}
+          <div class="time"><time datetime="${esc(e.start)}">${time(e.start)}</time></div>
+          <div class="actions">
+            <a class="btn" target="_blank" rel="noopener" href="${esc(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(fill(ui.calTitle, { first: c.first, second: c.second, event: e.label }))}&dates=${gcal(e.start)}/${gcal(e.end || e.start)}&location=${encodeURIComponent([e.name, e.address].filter(Boolean).join(', '))}`)}">${esc(ui.addCalendar)}</a>
+            <a class="btn" target="_blank" rel="noopener" href="${esc(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.maps || `${e.name} ${e.address || ''}`)}`)}">${esc(ui.directions)}</a>
+            ${e.image ? `<button class="btn" type="button" data-venue="${esc(e.name)}" data-img="${esc(e.image)}">${esc(ui.venueGallery)}</button>` : ''}
+          </div>
+        </article>`).join('\n        ')}
+        ${s.dressCode ? `<article class="card event lift r">
+          <div class="label">${esc(s.dressCode.label)}</div>
+          <div class="row dress-icons">
+            <span class="dress-ic">${icon('dress', { size: 40, stroke: 1.1, label: ui.dress })}</span>
+            <span class="dress-ic">${icon('suit', { size: 40, stroke: 1.1, label: ui.suit })}</span>
+          </div>
+          <h3 class="script">${esc(s.dressCode.title)}</h3>
+          <p class="addr">${rich(s.dressCode.text)}</p>
+        </article>` : ''}
+      </div>
+      ${dots('events')}
+    </div>
+  </section>`;
+
+  S.itinerary = (s) => `
+  <section class="alt itin" id="${id('itinerary')}" style="--n:${s.items.length}">
+    <div class="itin-pin">
+    <div class="wrap">
+      ${head(s, `<div class="itin-count" id="itin-count" aria-live="polite">${esc(ui.itinHint)}</div>`)}
+      <div class="tl-wrap" id="tl">
+        <span class="tl-rail" aria-hidden="true"></span><span class="tl-fill" id="tl-fill" aria-hidden="true"></span>
+        <ol class="tl">
+        ${s.items.map((i) => `<li><span class="node"></span><div class="item"><span class="ic">${icon(i.icon || 'heart')}</span><div><span class="t">${esc(i.time)}</span><b>${esc(i.title)}</b></div></div></li>`).join('\n        ')}
+        </ol>
+      </div>
+      ${s.end ? `<div class="tl-end" id="tl-end">${rich(s.end)}</div>` : ''}
+    </div>
+    </div>
+  </section>`;
+
+  S.gifts = (s) => {
+    const opts = s.options || [];
+    return `
+  <section class="block" id="${id('gifts')}">
+    <h2 class="sr-only">${esc(s.nav || s.title)}</h2>
+    <div class="wrap"><div class="duo carousel${s.album ? '' : ' single'}" id="duo">
+      <div class="card panel lift r">
+        <span class="icon">${icon('mail', { size: 32 })}</span>
+        <h3>${rich(s.title)}</h3>
+        ${s.text ? `<p class="panel-text">${rich(s.text)}</p>` : ''}
+        <div class="row center">${opts.map((o, i) => `<button class="btn" type="button" data-gift="${i}" aria-expanded="false" aria-controls="gift-${i}">${esc(o.name)}</button>`).join('')}</div>
+        ${opts.map((o, i) => `<div class="gift-detail" id="gift-${i}" hidden>${o.copy !== undefined ? `
+          <span>${esc(o.label || o.name)}</span>
+          <span class="code" id="gift-code-${i}">${esc(o.copy)}</span>${isPending(o.copy) && editorOn ? `<button type="button" class="edit small" data-edit="${esc(o.label || o.name)}" data-target="gift-code-${i}">${esc(fill(ui.pendingId, { label: o.label || o.name }))}</button>` : ''}
+          <button class="btn" type="button" data-copy="gift-code-${i}">${esc(ui.copy)}</button>` : ''}${o.text ? `<span>${rich(o.text)}</span>` : ''}${o.url ? `<a class="btn" href="${esc(o.url)}" target="_blank" rel="noopener">${esc(o.button || o.name)}</a>` : ''}
+        </div>`).join('')}
+      </div>
+      ${s.album ? `<div class="card panel lift r">
+        <span class="icon">${icon('camera', { size: 32 })}</span>
+        <h3>${rich(s.album.title)}</h3>
+        <p class="panel-text">${rich(s.album.text)}</p>
+        <a class="btn" href="${esc(s.album.url)}" target="_blank" rel="noopener">${esc(s.album.button)} <span class="arr" aria-hidden="true">→</span></a>
+      </div>` : ''}
+    </div>
+    ${s.album ? dots('duo') : ''}
+    </div>
+  </section>`;
+  };
+
+  S.gallery = (s) => `
+  <section class="block alt" id="${id('gallery')}">
+    <div class="wrap">
+      ${head(s, orn)}
+      <div class="gallery r">
+        ${s.photos.map((p) => `<button type="button" data-full="${esc(p.image)}" aria-label="${esc(fill(ui.zoom, { caption: p.caption || p.alt }))}">${img(p.image, p.alt, { position: p.position })}${p.caption ? `<span class="cap">${esc(p.caption)}</span>` : ''}</button>`).join('\n        ')}
+      </div>
+    </div>
+  </section>`;
+
+  S.quiz = (s) => {
+    const n = s.questions.length;
+    return `
+  <section class="block" id="${id('quiz')}">
+    <div class="wrap">
+      ${head(s, `<div class="meter"><i id="meter"></i></div><div class="score" id="score" aria-live="polite">${esc(fill(ui.score, { s: 0, n }))}</div>`)}
+      <div class="quiz carousel" id="quiz">
+        ${s.questions.map((q, qi) => `<div class="card q lift r" data-answer="${q.answer}">
+          <span class="num">${qi + 1}</span>
+          <p>${rich(q.q)}</p>
+          <div class="opts">${q.options.map((o) => `<button type="button" class="btn">${esc(o)}</button>`).join('')}</div>
+          ${editorOn && q.options.some(isPending) ? `<button type="button" class="edit small" data-edit="${esc(`Pregunta: ${q.q}`)}" data-current="${esc(`${q.options.join(' / ')}  (correcta: ${q.options[q.answer]})`)}">${esc(ui.editAnswers)}</button>` : ''}
+        </div>`).join('\n        ')}
+      </div>
+      ${dots('quiz')}
+      <div class="verdict" id="verdict" aria-live="polite" hidden></div>
+    </div>
+  </section>`;
+  };
+
+  S.rsvp = (s) => `
+  <section class="block alt" id="${id('rsvp')}">
+    <div class="wrap rsvp">
+      <div class="side r">
+        ${s.deadline ? `<div class="label">${esc(ui.rsvpBefore)} ${txt(s.deadline, 'Fecha límite para confirmar')}</div>` : ''}
+        <h2>${rich(s.title)}</h2>
+        ${s.text ? `<p class="muted">${rich(s.text)}</p>` : ''}
+        ${s.image ? img(s.image, '') : ''}
+      </div>
+      <div class="r">
+        <form class="card" id="rsvp" novalidate>
+          <div class="field"><input id="r-name" name="name" autocomplete="name" placeholder=" " required><label for="r-name">${esc(ui.name)}</label></div>
+          <div class="row" role="group" aria-label="${esc(ui.attendGroup)}">
+            <button class="btn on" type="button" data-attend="si" aria-pressed="true">${esc(ui.attendYes)}</button>
+            <button class="btn" type="button" data-attend="no" aria-pressed="false">${esc(ui.attendNo)}</button>
+          </div>
+          <div id="if-yes" class="if-yes">
+            ${s.menus?.length ? `<div class="stack"><span class="flabel" id="menu-l">${esc(ui.menu)}</span><div class="row" role="group" aria-labelledby="menu-l">${s.menus.map((m) => `<button class="btn" type="button" data-menu="${esc(m)}" aria-pressed="false">${esc(m)}</button>`).join('')}</div></div>` : ''}
+            ${s.askSong !== false ? `<div class="field"><input id="r-song" name="song" placeholder=" "><label for="r-song">${esc(ui.song)}</label></div>` : ''}
+          </div>
+          <div class="field"><textarea id="r-note" name="note" rows="2" placeholder=" "></textarea><label for="r-note">${esc(ui.note)}</label></div>
+          <p id="r-err" class="err" role="alert" hidden>${esc(ui.nameError)}</p>
+          <button class="btn solid start" type="submit">${esc(ui.submit)} <span class="arr" aria-hidden="true">→</span></button>
+        </form>
+        <div class="card thanks" id="thanks" hidden>
+          <div class="script thanks-title">${esc(ui.thanks)}</div>
+          <p id="thanks-text"></p>
+          <a class="btn solid" id="wa" target="_blank" rel="noopener" href="https://wa.me/${esc(s.whatsapp)}">${esc(ui.sendWa)} <span class="arr" aria-hidden="true">→</span></a>
+          <button class="btn" type="button" id="edit">${esc(ui.modify)}</button>
+        </div>
+      </div>
+    </div>
+  </section>`;
+
+  const f = cfg.footer;
+  const footer = !f ? '' : `
+<footer>
+  ${f.image ? img(f.image, '', { id: 'foot-img' }) : ''}
+  <div class="wrap">
+    <div class="label">${esc(f.label || '')}</div>
+    <div class="script">${names}</div>
+    <div class="foot-date">${DOT}</div>
+    ${cfg.rsvp ? `<a class="btn solid" href="#${id('rsvp')}">${esc(ui.ctaConfirm)} <span class="arr" aria-hidden="true">→</span></a>` : ''}
+  </div>
+</footer>`;
+
+  const x = `<button class="x" type="button" data-close aria-label="${esc(ui.close)}">${icon('close', { size: 20, stroke: 1.6 })}</button>`;
+  const overlays = `
+${cfg.rsvp ? `<a class="btn solid float-cta" id="float-cta" href="#${id('rsvp')}">${esc(ui.ctaShort)} <span class="arr" aria-hidden="true">→</span></a>` : ''}
+<div class="overlay" id="venue" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="venue-title">
+    ${x}
+    <img id="venue-img" alt="">
+    <div class="script" id="venue-title"></div>
+  </div>
+</div>
+${editorOn ? `<div class="overlay" id="editor" hidden>
+  <form class="dialog editor" id="editor-form" role="dialog" aria-modal="true" aria-labelledby="editor-title">
+    ${x}
+    <div class="label">${esc(ui.editTitle)}</div>
+    <h3 class="script" id="editor-title"></h3>
+    <p id="editor-hint" class="muted"></p>
+    <label for="editor-text" class="flabel start">${esc(ui.editNew)}</label>
+    <textarea id="editor-text"></textarea>
+    <a class="btn solid" id="editor-send" target="_blank" rel="noopener" href="https://wa.me/${esc(cfg.pendingEditor.whatsapp)}">${esc(ui.editSend)} <span class="arr" aria-hidden="true">→</span></a>
+  </form>
+</div>` : ''}
+<div class="overlay lightbox" id="lightbox" hidden>
+  ${x}
+  <img id="lightbox-img" alt="">
+</div>`;
+
+  /* ---------- datos para app.js ---------- */
+  const images = [...new Set([h.image, ...(cfg.story?.photos || []).map((p) => p.image), ...evs.map((e) => e.image), ...(cfg.gallery?.photos || []).map((p) => p.image)].filter(Boolean))];
+  const runtime = {
+    date: cfg.date,
+    rsvp: cfg.rsvp ? { whatsapp: cfg.rsvp.whatsapp, header: fill(ui.waHeader, { couple: namesTxt, date: DOT }) } : null,
+    editWhatsapp: editorOn ? cfg.pendingEditor.whatsapp : '',
+    verdicts: cfg.quiz?.verdicts || null,
+    preload: images,
+    ui: Object.fromEntries(['itinHint', 'itinOf', 'copied', 'copyFallback', 'prev', 'next', 'goTo', 'score', 'thanksYes', 'thanksNo', 'waName', 'waAttend', 'waYes', 'waNo', 'waMenu', 'waSong', 'waNote', 'editHint', 'editHintImg', 'editMsg', 'editImgAttached', 'venueAlt'].map((k) => [k, ui[k]])),
+  };
+
+  /* ---------- <head>: SEO y redes ---------- */
+  const seo = cfg.seo || {};
+  const title = seo.title || `Boda de ${c.first} y ${c.second}`;
+  const desc = seo.description || `${c.first} y ${c.second} se casan el ${longDate(cfg.date)}.`;
+  const abs = (p) => (siteUrl ? new URL(p, siteUrl.replace(/\/?$/, '/')).href : p);
+  const themeVars = Object.entries(cfg.theme || {}).map(([k, v]) => `--${k}:${v}`).join(';');
+  const jsonld = seo.indexable && {
+    '@context': 'https://schema.org',
+    '@type': 'Event',
+    name: title,
+    description: desc,
+    startDate: evs[0]?.start || cfg.date,
+    endDate: evs[evs.length - 1]?.end,
+    eventStatus: 'https://schema.org/EventScheduled',
+    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+    image: [abs(seo.image || h.image)],
+    location: evs.map((e) => ({ '@type': 'Place', name: e.name, address: e.address || cfg.city })),
+  };
+  const fonts = assets.fonts.map((f) => `<link rel="preload" href="${f}" as="font" type="font/woff2" crossorigin>`).join('\n');
+
+  return `<!doctype html>
+<html lang="${esc(cfg.lang || 'es')}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>${esc(title)}</title>
+<meta name="description" content="${esc(desc)}">
+${seo.indexable ? '<meta name="robots" content="index,follow,max-image-preview:large">' : '<meta name="robots" content="noindex,nofollow">'}
+${siteUrl ? `<link rel="canonical" href="${esc(abs(''))}">` : ''}
+<meta name="theme-color" content="${esc(cfg.theme?.paper || '#F5F0E6')}">
+<meta name="color-scheme" content="light">
+<meta name="format-detection" content="telephone=no">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="${esc((cfg.locale || 'es-ES').replace('-', '_'))}">
+<meta property="og:site_name" content="${esc(`${c.first} & ${c.second}`)}">
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(desc)}">
+${siteUrl ? `<meta property="og:url" content="${esc(abs(''))}">` : ''}
+${seo.image ? `<meta property="og:image" content="${esc(abs(seo.image))}">
+${dims[seo.image] ? `<meta property="og:image:width" content="${dims[seo.image].w}">\n<meta property="og:image:height" content="${dims[seo.image].h}">` : ''}
+<meta property="og:image:alt" content="${esc(seo.imageAlt || '')}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="${esc(abs(seo.image))}">` : ''}
+<meta name="twitter:title" content="${esc(title)}">
+<meta name="twitter:description" content="${esc(desc)}">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+${touchIcon ? '<link rel="apple-touch-icon" href="apple-touch-icon.png">' : ''}
+${fonts}
+<link rel="preload" as="image" href="${esc(h.image)}" fetchpriority="high">
+<link rel="stylesheet" href="${assets.css}">
+${themeVars ? `<style>:root{${esc(themeVars).replace(/&#39;/g, "'").replace(/&quot;/g, '"')}}</style>` : ''}
+${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, '\\u003c')}</script>` : ''}
+</head>
+<body>
+<noscript><style>.envelope{display:none}</style></noscript>
+<a class="skip" href="#main">${esc(ui.skip)}</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+${envelope}
+${nav}
+${hero}
+<main id="main">
+${intro}
+${sections.map((k) => S[k](cfg[k])).join('\n')}
+</main>
+${footer}
+${overlays}
+<script id="invite-data" type="application/json">${JSON.stringify(runtime).replace(/</g, '\\u003c')}</script>
+<script src="${assets.js}" defer></script>
+</body>
+</html>
+`;
+}
