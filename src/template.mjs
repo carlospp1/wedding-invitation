@@ -69,7 +69,9 @@ export const UI_DEFAULTS = {
   skip: 'Saltar al contenido',
   themeAria: 'Diseño de la invitación',
   themeOriginal: 'Original',
-  themeDiamond: 'Diamante',
+  themeDiamond: 'Diamond Beach',
+  themeOlivo: 'Olivo',
+  themePick: 'Elige el papel',
 };
 
 // Identificadores (anclas #) de cada sección; se pueden cambiar con `id` en la configuración.
@@ -123,6 +125,7 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
   /* ---------- sobre, menú y portada ---------- */
   const envelope = `
 <div class="envelope" id="envelope">
+  <div class="ice-field" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
   <div class="hint envelope-hint">${esc(ui.envelopeHint)}</div>
   <div class="env">
     <div class="back"></div>
@@ -131,6 +134,14 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
     <button class="seal" id="seal" type="button" aria-label="${esc(ui.envelopeOpen)}">${esc(c.initials)}</button>
   </div>
   <div class="label hint">${esc(ui.envelopeTap)}</div>
+  <div class="theme-pick" role="group" aria-label="${esc(ui.themeAria)}">
+    <span class="flabel">${esc(ui.themePick)}</span>
+    <div class="row center">
+      <button type="button" data-theme="original">${esc(ui.themeOriginal)}</button>
+      <button type="button" data-theme="diamond">${esc(ui.themeDiamond)}</button>
+      <button type="button" data-theme="olivo">${esc(ui.themeOlivo)}</button>
+    </div>
+  </div>
 </div>`;
 
   const navItems = sections.filter((k) => cfg[k].nav || k === 'rsvp').map((k) => `<li><a href="#${id(k)}">${esc(k === 'rsvp' ? cfg.rsvp.nav || ui.rsvpNav : cfg[k].nav)}</a></li>`).join('');
@@ -144,6 +155,7 @@ export function render(cfg, { dims = {}, assets, siteUrl = '', touchIcon = false
       <div class="theme-menu" id="theme-menu" role="listbox" aria-label="${esc(ui.themeAria)}" hidden>
         <button type="button" role="option" data-theme="original">${esc(ui.themeOriginal)}</button>
         <button type="button" role="option" data-theme="diamond">${esc(ui.themeDiamond)}</button>
+        <button type="button" role="option" data-theme="olivo">${esc(ui.themeOlivo)}</button>
       </div>
     </div>
   </div>
@@ -393,7 +405,7 @@ ${editorOn ? `<div class="overlay" id="editor" hidden>
     editWhatsapp: editorOn ? cfg.pendingEditor.whatsapp : '',
     verdicts: cfg.quiz?.verdicts || null,
     preload: images,
-    ui: Object.fromEntries(['copied', 'copyFallback', 'prev', 'next', 'goTo', 'score', 'thanksYes', 'thanksNo', 'waName', 'waAttend', 'waYes', 'waNo', 'waMenu', 'waSong', 'waNote', 'editHint', 'editHintImg', 'editMsg', 'editImgAttached', 'venueAlt', 'themeAria', 'themeOriginal', 'themeDiamond'].map((k) => [k, ui[k]])),
+    ui: Object.fromEntries(['copied', 'copyFallback', 'prev', 'next', 'goTo', 'score', 'thanksYes', 'thanksNo', 'waName', 'waAttend', 'waYes', 'waNo', 'waMenu', 'waSong', 'waNote', 'editHint', 'editHintImg', 'editMsg', 'editImgAttached', 'venueAlt', 'themeAria', 'themeOriginal', 'themeDiamond', 'themeOlivo'].map((k) => [k, ui[k]])),
   };
 
   /* ---------- <head>: SEO y redes ---------- */
@@ -417,11 +429,11 @@ ${editorOn ? `<div class="overlay" id="editor" hidden>
   const fonts = assets.fonts.map((f) => `<link rel="preload" href="${f}" as="font" type="font/woff2" crossorigin>`).join('\n');
 
   return `<!doctype html>
-<html lang="${esc(cfg.lang || 'es')}" data-theme="original">
+<html lang="${esc(cfg.lang || 'es')}" data-theme="original" style="--hero-img:url('${esc(h.image || '')}')">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<script>(function(){try{var t=localStorage.getItem('invite-theme');if(t==='diamond'||t==='original')document.documentElement.setAttribute('data-theme',t)}catch(e){}})();</script>
+<script>(function(){try{var t=localStorage.getItem('invite-theme');if(t==='diamond'||t==='original'||t==='olivo')document.documentElement.setAttribute('data-theme',t)}catch(e){}})();</script>
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
 ${seo.indexable ? '<meta name="robots" content="index,follow,max-image-preview:large">' : '<meta name="robots" content="noindex,nofollow">'}
