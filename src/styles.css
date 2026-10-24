@@ -516,6 +516,8 @@ footer .btn{margin-top:12px}
   .nav,.frame-wrap,.facts,.ribbon,.fact,.scroll-cue,.envelope-hint,.env,.envelope .hint.label,.env .letter .label,.env .letter .script,.env .letter .letter-date{opacity:1!important;transform:none!important;animation:none!important}
   .typewrite.is-typing::after{content:none}
   .invite-card.reveal.pre .invite-card-inner>*{opacity:1!important}
+  .invite-card .typewrite[data-text]:empty::before{content:attr(data-text)}
+  .invite-names .typewrite-amp.is-off{opacity:1}
 }
 @media print{
   .envelope,.boot,.nav,.progress,.float-cta,.ribbon,.scroll-cue,.dots,.overlay{display:none!important}

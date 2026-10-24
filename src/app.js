@@ -107,6 +107,13 @@
     if (!text) { if (done) done(); return; }
     step();
   }
+  function fillCardNames() {
+    cardLines.forEach(function (el) {
+      var t = el.getAttribute('data-text');
+      if (t) el.textContent = t;
+    });
+    if (coupleAmp) coupleAmp.classList.remove('is-off');
+  }
   function startCardWrite() {
     if (reduce || startCardWrite.ran || !cardLines.length) return;
     startCardWrite.ran = true;
@@ -115,12 +122,15 @@
       cardLines.forEach(function (el) { typeLine(el); });
     }, 100);
   }
-  if (!reduce && cardLines.length) {
-    cardLines.forEach(function (el) {
-      if (!el.getAttribute('data-text')) el.setAttribute('data-text', el.textContent);
-      el.textContent = '';
-    });
-    if (coupleAmp) coupleAmp.classList.add('is-off');
+  if (cardLines.length) {
+    if (reduce) fillCardNames();
+    else {
+      cardLines.forEach(function (el) {
+        if (!el.getAttribute('data-text')) el.setAttribute('data-text', el.textContent);
+        el.textContent = '';
+      });
+      if (coupleAmp) coupleAmp.classList.add('is-off');
+    }
   }
 
   /* ---------- Aparición al hacer scroll (solo lo que empieza fuera de pantalla) ---------- */
@@ -158,12 +168,9 @@
     if (writeIo) writeIo.observe(writeZone);
     else startCardWrite();
   }
-  whenReady(function () {
-    if (skipEnv) document.body.classList.remove('locked');
-  });
 
-  /* ---------- Scroll: progreso, menú, botón flotante y parallax ---------- */
-  var bar = $('#progress'), nav = $('#nav'), fcta = $('#float-cta'), par = $('#parallax'), foot = $('#foot-img'), rsvpSec = $('#rsvp') && $('#rsvp').closest('section');
+  /* ---------- Scroll: progreso, menú y botón flotante ---------- */
+  var bar = $('#progress'), nav = $('#nav'), fcta = $('#float-cta'), rsvpSec = $('#rsvp') && $('#rsvp').closest('section');
   var links = $$('.nav ul a'), secs = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
   var ticking = false;
   function onScroll() {
@@ -175,8 +182,6 @@
       var thanksOpen = $('#thanks') && !$('#thanks').hidden;
       fcta.classList.toggle('show', y > innerHeight * .8 && !thanksOpen && !(r && r.top < innerHeight && r.bottom > 0));
     }
-    if (!reduce && innerWidth > 900 && par) par.style.transform = 'translateY(' + (y * .08) + 'px)';
-    if (!reduce && foot) { var fr = foot.parentNode.getBoundingClientRect(); if (fr.top < innerHeight) foot.style.transform = 'translateY(' + ((fr.top - innerHeight) * .12) + 'px)'; }
     var cur = -1;
     secs.forEach(function (s, i) { if (s && s.getBoundingClientRect().top < innerHeight * .35) cur = i; });
     links.forEach(function (a, i) { a.classList.toggle('active', i === cur); if (i === cur) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
@@ -192,6 +197,15 @@
   }
   jumpHash();
   addEventListener('load', jumpHash);
+  whenReady(function () {
+    if (skipEnv) {
+      document.body.classList.remove('locked');
+      requestAnimationFrame(function () {
+        jumpHash();
+        onScroll();
+      });
+    }
+  });
 
   // Mantener visible el enlace activo dentro del menú horizontal (móvil).
   // Se espera a que la página deje de desplazarse: mover el menú a la vez corta el scroll suave hacia la sección.
