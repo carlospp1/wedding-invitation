@@ -211,8 +211,28 @@
 
   /* ---------- Ventanas ---------- */
   var lastFocus = null;
-  function openOv(ov) { lastFocus = document.activeElement; ov.hidden = false; document.body.classList.add('locked'); var c = $('[data-close]', ov); if (c) c.focus(); }
-  function closeOv(ov) { ov.hidden = true; document.body.classList.remove('locked'); if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+  function quietFocus(el) {
+    if (!el || !el.focus) return;
+    try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); }
+  }
+  function lockPage() {
+    if (document.body.classList.contains('ov-open') || document.body.classList.contains('locked')) return;
+    document.body.dataset.scrollY = String(window.scrollY || 0);
+    document.body.classList.add('ov-open');
+    document.body.style.top = '-' + document.body.dataset.scrollY + 'px';
+  }
+  function unlockPage() {
+    if (!document.body.classList.contains('ov-open')) return;
+    var y = parseInt(document.body.dataset.scrollY || '0', 10) || 0;
+    document.body.classList.remove('ov-open');
+    document.body.style.top = '';
+    delete document.body.dataset.scrollY;
+    document.documentElement.style.scrollBehavior = 'auto';
+    window.scrollTo(0, y);
+    document.documentElement.style.scrollBehavior = '';
+  }
+  function openOv(ov) { lastFocus = document.activeElement; ov.hidden = false; lockPage(); quietFocus($('[data-close]', ov)); }
+  function closeOv(ov) { ov.hidden = true; unlockPage(); quietFocus(lastFocus); }
   $$('.overlay').forEach(function (ov) {
     ov.addEventListener('click', function (e) { if (e.target === ov || e.target.closest('[data-close]')) closeOv(ov); });
   });
@@ -255,6 +275,7 @@
     var edSend = $('#editor-send');
     if (edSend) {
       edSend.addEventListener('click', function () {
+        unlockPage();
         document.body.classList.remove('locked');
       });
     }
